@@ -1,0 +1,42 @@
+#cloud-config
+# Installs PlaceFinder from Git and runs it as a systemd service on port 8000.
+# create-vm.sh replaces __REPO__ (Git URL) and __REF__ (tag or branch).
+# Progress on the VM: cloud-init status --wait; journalctl -u placefinder
+
+package_update: true
+packages:
+  - git
+  - curl
+  - unzip
+
+write_files:
+  - path: /etc/systemd/system/placefinder.service
+    permissions: "0644"
+    content: |
+      [Unit]
+      Description=PlaceFinder API
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      User=placefinder
+      WorkingDirectory=/opt/placefinder/app
+      Environment=DATA_FILE=/opt/placefinder/data/cities15000.txt
+      ExecStart=/opt/placefinder/app/.venv/bin/uvicorn placefinder.main:app --host 0.0.0.0 --port 8000
+      Restart=on-failure
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  # Service account without login shell
+  - useradd --system --create-home --home-dir /opt/placefinder --shell /usr/sbin/nologin placefinder
+  # uv installs Python and the dependencies for this user only
+  - sudo -u placefinder -H sh -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+  - sudo -u placefinder -H git clone --depth 1 --branch '__REF__' '__REPO__' /opt/placefinder/app
+  - sudo -u placefinder -H sh -c 'cd /opt/placefinder/app && /opt/placefinder/.local/bin/uv sync --frozen --no-dev'
+  # GeoNames cities15000 (CC BY 4.0)
+  - sudo -u placefinder -H mkdir -p /opt/placefinder/data
+  - sudo -u placefinder -H sh -c 'cd /opt/placefinder/data && curl -fsSLO https://download.geonames.org/export/dump/cities15000.zip && unzip -o cities15000.zip'
+  - systemctl daemon-reload
+  - systemctl enable --now placefinder.service

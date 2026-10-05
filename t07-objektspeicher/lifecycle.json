@@ -1,0 +1,16 @@
+{
+  "Rules": [
+    {
+      "ID": "expire-raw-data",
+      "Status": "Enabled",
+      "Filter": {"Prefix": "raw/"},
+      "Expiration": {"Days": 30}
+    },
+    {
+      "ID": "abort-incomplete-uploads",
+      "Status": "Enabled",
+      "Filter": {},
+      "AbortIncompleteMultipartUpload": {"DaysAfterInitiation": 1}
+    }
+  ]
+}

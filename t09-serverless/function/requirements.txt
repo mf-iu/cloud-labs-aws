@@ -1,0 +1,2 @@
+# boto3 is part of the Lambda runtime; pg8000 is only used with DATABASE_URL
+pg8000>=1.31

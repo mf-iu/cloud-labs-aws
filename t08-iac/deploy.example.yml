@@ -1,0 +1,43 @@
+# Example workflow for your PlaceFinder fork: copy it to
+# .github/workflows/deploy.yml. It builds the image, pushes it to ECR and
+# updates the ECS Express Mode service, without stored AWS keys.
+#
+# Repository variables (from "tofu output" of t08-iac/github-oidc and t08-iac/infra):
+#   AWS_ROLE_ARN, AWS_REGION, ECR_REPOSITORY_URL, SERVICE_ARN
+name: deploy
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+  id-token: write   # needed to request the OIDC token
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Get AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push the image
+        run: |
+          image="${{ vars.ECR_REPOSITORY_URL }}:${GITHUB_SHA::12}"
+          docker build -t "$image" .
+          docker push "$image"
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+
+      - name: Roll out the new image
+        run: |
+          aws ecs update-express-gateway-service \
+            --service-arn "${{ vars.SERVICE_ARN }}" \
+            --primary-container "{\"image\": \"$IMAGE\", \"containerPort\": 8000}"

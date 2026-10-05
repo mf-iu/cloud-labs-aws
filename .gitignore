@@ -1,0 +1,20 @@
+# Personal settings and created resource ids
+config.env
+.state/
+
+# OpenTofu
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+
+# Build output and downloads
+build/
+out/
+*.zip
+*.parquet
+*.pmtiles
+__pycache__/
+.ruff_cache/
+.venv/
