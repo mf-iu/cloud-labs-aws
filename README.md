@@ -8,7 +8,7 @@ Jeder Teilnehmer arbeitet in der ersten Kurshälfte (Termine 1–7) mit einem An
 
 - Der Dev Container dieses Repositorys (siehe unten) – er enthält alle Werkzeuge der Übungen. Ohne Dev Container: eine Linux-Shell (WSL 2) mit AWS CLI ab Version 2.32, Docker, Python 3.12, uv, curl, dig, openssl; ab Termin 8 OpenTofu ab Version 1.10. `psql` ist optional, sonst starten die Skripte es als Container.
 - Ein AWS-Konto im kostenlosen Plan (Free Plan) – Einrichtung in [t01-grundlagen](t01-grundlagen/README.md)
-- Ein eigener Fork von PlaceFinder auf GitHub. Die Skripte erwarten die Container-Images unter `ghcr.io/<github-user>/placefinder:<tag>`, also z. B. `:t03` für den Stand von Termin 3. Die Images müssen öffentlich sein oder vorher lokal gebaut werden.
+- Ein eigener Fork von [PlaceFinder](https://github.com/mf-iu/placefinder) auf GitHub; beim Forken „Copy the master branch only“ abwählen, sonst fehlen die Tags der Ausbaustufen (`t01`, `t02` …). Die Skripte erwarten die Container-Images unter `ghcr.io/<github-user>/placefinder:<tag>`, also z. B. `:t03` für den Stand von Termin 3. Die Images müssen öffentlich sein oder vorher lokal gebaut werden.
 
 ## Arbeitsumgebung: Dev Container
 
@@ -21,12 +21,13 @@ Der Ordner `.devcontainer/` beschreibt einen Container mit allen Werkzeugen der 
 ```bash
 mkdir -p ~/kurs && cd ~/kurs
 git clone https://github.com/mf-iu/cloud-labs-aws.git
+git clone https://github.com/<github-user>/placefinder.git   # eigener Fork
 code cloud-labs-aws
 ```
 
 VS Code öffnet den Ordner in WSL und meldet „Folder contains a Dev Container configuration file“: **Reopen in Container** wählen. Ohne Meldung: F1 → „Dev Containers: Reopen in Container“. Der erste Start baut das Image und dauert 10–15 Minuten, danach startet der Container in Sekunden. Unten links zeigt VS Code dann „Dev Container: Cloud-Kurs: …“; jedes Terminal in VS Code läuft jetzt im Container.
 
-**Was erhalten bleibt:** Der Container sieht den ganzen Ordner `~/kurs` unter `/workspaces`; PlaceFinder wird daneben geklont. SSH-Schlüssel (`~/.ssh`) und die AWS-Anmeldung (`~/.aws`) liegen in WSL und überstehen einen Neubau. Docker-Images und k3d-Cluster liegen in einem Volume des Containers; `docker login` (Docker Hub) ist nach einem Neubau zu wiederholen.
+**Was erhalten bleibt:** Der Container sieht den ganzen Ordner `~/kurs` unter `/workspaces`, PlaceFinder also unter `/workspaces/placefinder`. SSH-Schlüssel (`~/.ssh`) und die AWS-Anmeldung (`~/.aws`) liegen in WSL und überstehen einen Neubau. Docker-Images und k3d-Cluster liegen in einem Volume des Containers; `docker login` (Docker Hub) ist nach einem Neubau zu wiederholen.
 
 **Aktualisieren:** Ändert sich `.devcontainer/`, in VS Code F1 → „Dev Containers: Rebuild Container“.
 
