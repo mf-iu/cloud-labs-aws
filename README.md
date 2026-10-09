@@ -36,9 +36,9 @@ VS Code öffnet den Ordner in WSL und meldet „Folder contains a Dev Container 
 Im Terminal des Dev Containers:
 
 ```bash
-cp config.example.env config.env   # persönliche Einstellungen eintragen
-aws login --remote                 # Anmeldung, siehe t01-grundlagen
-t01-grundlagen/check-cli.sh        # prüft CLI, Anmeldung und Region
+cp config.example.env config.env           # persönliche Einstellungen eintragen
+aws login --remote --region eu-central-1   # Anmeldung, siehe t01-grundlagen
+t01-grundlagen/check-cli.sh                # prüft CLI, Anmeldung und Region
 ```
 
 `config.env` und der Ordner `.state/` gehören nur auf den eigenen Rechner und sind in `.gitignore` eingetragen. In `.state/` merken sich die Skripte die IDs der angelegten Ressourcen, damit die Aufräumskripte sie wiederfinden, außerdem Downloads und Zugangsdaten der Übungsdatenbank.
