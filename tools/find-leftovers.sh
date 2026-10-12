@@ -25,6 +25,12 @@ aws ec2 describe-nat-gateways --filter Name=state,Values=pending,available \
   --query 'NatGateways[].[NatGatewayId,State,VpcId]' --output table
 section "Elastic IP addresses"
 aws ec2 describe-addresses --query 'Addresses[].[PublicIp,AllocationId,AssociationId]' --output table
+section "EBS volumes not attached to an instance (cost storage)"
+aws ec2 describe-volumes --filters Name=status,Values=available \
+  --query 'Volumes[].[VolumeId,Size,VolumeType,CreateTime]' --output table
+section "EBS snapshots of this account"
+aws ec2 describe-snapshots --owner-ids self \
+  --query 'Snapshots[].[SnapshotId,VolumeSize,StartTime,Description]' --output table
 section "Load balancers"
 aws elbv2 describe-load-balancers --query 'LoadBalancers[].[LoadBalancerName,Type,State.Code]' --output table
 section "RDS instances"
