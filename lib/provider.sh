@@ -37,7 +37,7 @@ ubuntu_ami() {   # ubuntu_ami [amd64|arm64]
 ensure_key_pair() {   # ensure_key_pair <lab>
   local key
   key=$(name key)
-  [[ -f "$SSH_PUBLIC_KEY" ]] || die "SSH key $SSH_PUBLIC_KEY not found. Create one: ssh-keygen -t ed25519"
+  [[ -f "$SSH_PUBLIC_KEY" ]] || die "SSH key $SSH_PUBLIC_KEY not found. Create it in the WSL shell, not in the dev container: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519"
   if ! aws ec2 describe-key-pairs --key-names "$key" >/dev/null 2>&1; then
     aws ec2 import-key-pair --key-name "$key" --public-key-material "fileb://$SSH_PUBLIC_KEY" \
       --tag-specifications "$(tag_spec key-pair "$1" "$key")" >/dev/null

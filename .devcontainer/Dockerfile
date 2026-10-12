@@ -32,7 +32,7 @@ RUN install -d /usr/share/postgresql-common/pgdg \
  && apt-get install -y --no-install-recommends postgresql-client-18 \
  && rm -rf /var/lib/apt/lists/*
 
-# OpenTofu (from T08) from its Debian package repository
+# OpenTofu from its Debian package repository
 RUN curl -fsSL -o /tmp/install-opentofu.sh https://get.opentofu.org/install-opentofu.sh \
  && sh /tmp/install-opentofu.sh --install-method deb \
  && rm -rf /tmp/install-opentofu.sh /var/lib/apt/lists/*
@@ -40,7 +40,7 @@ RUN curl -fsSL -o /tmp/install-opentofu.sh https://get.opentofu.org/install-open
 # uv manages Python versions, virtual environments and packages
 COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /uvx /usr/local/bin/
 
-# k3d runs a Kubernetes cluster in Docker (T03); pmtiles cuts map tiles (T07)
+# k3d runs a Kubernetes cluster in Docker; pmtiles cuts map tiles
 RUN arch="$(dpkg --print-architecture)" \
  && curl -fsSL -o /usr/local/bin/k3d \
       "https://github.com/k3d-io/k3d/releases/download/${K3D_VERSION}/k3d-linux-${arch}" \

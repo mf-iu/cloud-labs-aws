@@ -8,6 +8,7 @@ LAB=t02
 ref="${1:-t01}"
 instance_type="${VM_TYPE:-t3.micro}"
 check_login
+check_repo_ref "$PLACEFINDER_REPO" "$ref"
 load_state "$LAB"
 [[ -z "${INSTANCE_ID:-}" ]] || die "VM $INSTANCE_ID already exists. Run ./destroy-vm.sh first."
 

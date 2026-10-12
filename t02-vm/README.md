@@ -7,7 +7,7 @@
 ## Voraussetzungen
 
 - `t01-grundlagen` erledigt, `aws login` aktiv
-- SSH-Schlüssel: `ssh-keygen -t ed25519` (Pfad in `config.env`, `SSH_PUBLIC_KEY`)
+- SSH-Schlüssel `~/.ssh/id_ed25519`, einmalig im **Ubuntu-Terminal von WSL** angelegt, nicht im Container (siehe [t01-grundlagen](../t01-grundlagen/README.md#ssh-schlüssel-für-die-vms))
 - PlaceFinder-Fork mit dem Tag `t01` unter `PLACEFINDER_REPO` (öffentlich lesbar)
 
 ## Schritte

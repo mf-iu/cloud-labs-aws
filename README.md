@@ -31,6 +31,25 @@ VS Code öffnet den Ordner in WSL und meldet „Folder contains a Dev Container 
 
 **Aktualisieren:** Ändert sich `.devcontainer/`, in VS Code F1 → „Dev Containers: Rebuild Container“.
 
+### Arbeiten im Terminal des Containers
+
+Zeigt VS Code unten links „Dev Container: Cloud-Kurs: …“, läuft jedes Terminal dieses Fensters im Container.
+
+- **Terminal öffnen:** Strg+Ö (deutsche Tastatur; auf einer US-Tastatur Strg+Backtick) oder *Terminal* → *New Terminal*. Die Eingabeaufforderung zeigt den Benutzer `vscode` und einen Pfad unter `/workspaces`, z. B. `vscode ➜ /workspaces/cloud-labs-aws (master) $`. Nach dem ersten Bau zeigt ein Terminal die Ausgabe von `tools/check-tools.sh`; mit einer Taste schließen und ein neues öffnen.
+- **Ordner:** `/workspaces/cloud-labs-aws` (Startordner jedes Terminals) und `/workspaces/placefinder`. Es sind dieselben Dateien wie in WSL unter `~/kurs`; Änderungen sind auf beiden Seiten sofort sichtbar.
+- **Erste Befehle:**
+
+  ```bash
+  tools/check-tools.sh    # alle Werkzeuge vorhanden?
+  cd t01-grundlagen       # Ordner der Übung von Termin 1
+  aws login --remote --region eu-central-1
+  ```
+
+- **Mehrere Terminals:** mit **+** im Terminalbereich ein weiteres öffnen, mit Strg+Umschalt+5 nebeneinander teilen – praktisch für PlaceFinder: `uv run fastapi dev …` im einen, `curl` im anderen Terminal. Ein laufendes Programm beendet Strg+C, ein Terminal `exit` oder das Papierkorb-Symbol.
+- **Ports:** Ports wie 8000 leitet VS Code automatisch weiter (Reiter *Ports* neben *Terminal*); `http://localhost:8000` funktioniert dann auch im Browser unter Windows.
+- **Container oder WSL:** Im Container stehen alle Kurswerkzeuge zur Verfügung, aber nicht die eigene Shell-Konfiguration aus WSL. Befehle außerhalb des Containers laufen im Ubuntu-Fenster, z. B. `git clone` vor dem ersten Start und `ssh-keygen` für den SSH-Schlüssel (siehe [t01-grundlagen](t01-grundlagen/README.md#ssh-schlüssel-für-die-vms)); `wsl --shutdown` in der PowerShell. Zeigt VS Code unten links nur „WSL: Ubuntu-24.04“, ist der Ordner ohne Container geöffnet: F1 → „Dev Containers: Reopen in Container“.
+- **Nach einem Neustart:** VS Code öffnet den Ordner meist wieder im Container. Sonst *File* → *Open Recent* und den Eintrag mit „[Dev Container]“ wählen. Der Container startet in Sekunden; neu gebaut wird nur, wenn sich `.devcontainer/` geändert hat.
+
 ## Einrichtung
 
 Im Terminal des Dev Containers:

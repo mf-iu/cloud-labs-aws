@@ -94,18 +94,33 @@ render() {   # render <file> KEY=value ...
   printf '%s\n' "$text"
 }
 
-# Wait until a URL answers with a 2xx or 3xx status
+# Check that the VM will be able to clone the Git repository: it clones
+# anonymously, so the repository must be public and contain the tag or branch.
+check_repo_ref() {   # check_repo_ref <repository url> <tag or branch>
+  local repo=$1 ref=$2
+  log "Checking $repo for '$ref' ..."
+  GIT_TERMINAL_PROMPT=0 git -c credential.helper= ls-remote --exit-code \
+      "$repo" "refs/tags/$ref" "refs/heads/$ref" >/dev/null 2>&1 \
+    || die "Cannot read '$ref' from $repo. Check GITHUB_USER in config.env, make the repository public and push the tags (git push origin --tags)."
+}
+
+# Wait until a URL answers with a 2xx or 3xx status. Failed attempts are
+# expected while a new VM installs the application, so they are not
+# printed; a progress line appears once a minute.
 wait_for_http() {   # wait_for_http <url> [timeout seconds]
   local url=$1 timeout=${2:-300} start=$SECONDS
-  log "Waiting for $url (up to ${timeout}s) ..."
-  until curl -fsS -o /dev/null --max-time 5 "$url"; do
+  log "Waiting for $url (up to ${timeout}s; no answer yet is normal at first) ..."
+  until curl -fs -o /dev/null --max-time 5 "$url"; do
     if (( SECONDS - start > timeout )); then
       warn "No answer from $url after ${timeout}s"
       return 1
     fi
     sleep 10
+    if (( (SECONDS - start) % 60 < 10 )); then
+      log "... still waiting ($(( (SECONDS - start) / 60 )) min)"
+    fi
   done
-  log "$url answers."
+  log "$url answers after $(( SECONDS - start ))s."
 }
 
 # Download a GeoNames dump (CC BY 4.0) into .state/data and print the path of
