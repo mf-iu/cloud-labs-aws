@@ -9,6 +9,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 # Versions of the tools that come from GitHub releases
 ARG K3D_VERSION=v5.8.3
 ARG PMTILES_VERSION=1.31.2
+ARG TRIVY_VERSION=0.74.0
+ARG TRIVY_SHA256_AMD64=2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be4371a
+ARG TRIVY_SHA256_ARM64=b94ce1976bbf3c15b514b605ee88be7c6d94a29be2302847ff01cb794d47aad5
 
 # Ubuntu packages: Python 3.12, network diagnosis (T04), OpenStreetMap tools (T06),
 # shell tools
@@ -48,6 +51,19 @@ RUN arch="$(dpkg --print-architecture)" \
  && if [ "$arch" = amd64 ]; then parch=x86_64; else parch="$arch"; fi \
  && curl -fsSL "https://github.com/protomaps/go-pmtiles/releases/download/v${PMTILES_VERSION}/go-pmtiles_${PMTILES_VERSION}_Linux_${parch}.tar.gz" \
     | tar -xz -C /usr/local/bin pmtiles
+
+# Trivy scans container images for vulnerabilities (T02). Pinned version with
+# checksum: some releases and images were compromised in March 2026.
+RUN case "$(dpkg --print-architecture)" in \
+      amd64) tarch=64bit; sum="$TRIVY_SHA256_AMD64" ;; \
+      arm64) tarch=ARM64; sum="$TRIVY_SHA256_ARM64" ;; \
+      *) echo "unsupported architecture" >&2; exit 1 ;; \
+    esac \
+ && curl -fsSL -o /tmp/trivy.tar.gz \
+      "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-${tarch}.tar.gz" \
+ && echo "$sum  /tmp/trivy.tar.gz" | sha256sum -c - \
+ && tar -xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy \
+ && rm /tmp/trivy.tar.gz
 
 # Mount points for the AWS login and the SSH keys of WSL (see devcontainer.json),
 # owned by the container user, so that Docker does not create them as root
