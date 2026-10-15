@@ -14,8 +14,8 @@ if aws budgets describe-budget --account-id "$account" --budget-name "$budget_na
   log "Budget $budget_name exists already. To change it, run ./delete-budget.sh first."
   exit 0
 fi
-tmp=$(mktemp -d)
-trap 'rm -rf "$tmp"' EXIT
+tmp=$(mktemp --directory)
+trap 'rm --recursive --force "$tmp"' EXIT
 
 cat >"$tmp/budget.json" <<JSON
 {

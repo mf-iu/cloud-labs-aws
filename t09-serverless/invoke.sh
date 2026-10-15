@@ -9,9 +9,9 @@ function_name=$("$REPO_ROOT/tools/tofu.sh" "$REPO_ROOT/t09-serverless/infra" out
 payload='{}'
 [[ -n "${1:-}" ]] && payload="{\"date\": \"$1\"}"
 out=$(mktemp)
-trap 'rm -f "$out"' EXIT
+trap 'rm --force "$out"' EXIT
 aws lambda invoke --function-name "$function_name" --cli-binary-format raw-in-base64-out \
-  --payload "$payload" --log-type Tail --query LogResult --output text "$out" | base64 -d | tail -n 20
+  --payload "$payload" --log-type Tail --query LogResult --output text "$out" | base64 --decode | tail --lines 20
 echo
 cat "$out"
 echo

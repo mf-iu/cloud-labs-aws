@@ -25,7 +25,7 @@ Der Smoke-Test prüft Statuscodes (200, 404, 422), eine bedingte Anfrage mit `If
 ```bash
 ./create-api-gateway.sh
 ./smoke-test.sh <api-url>
-for i in $(seq 30); do curl -s -o /dev/null -w '%{http_code} ' <api-url>/health; done; echo
+for i in $(seq 30); do curl --silent --output /dev/null --write-out '%{http_code} ' <api-url>/health; done; echo
 ./destroy-api-gateway.sh
 ```
 

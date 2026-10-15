@@ -49,7 +49,7 @@ cat <<INFO
 
 Database ready: $host
   Load data:   ./load-cities.sh
-  Queries:     ./query.sh       (interactive: ./query.sh -i)
+  Queries:     ./query.sh       (interactive: ./query.sh --interactive)
   Delete:      ./destroy-db.sh  (do not keep it running!)
 The connection string is stored in .state/$LAB.env.
 INFO

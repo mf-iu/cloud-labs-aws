@@ -32,7 +32,7 @@ jobs:
       - name: Build and push the image
         run: |
           image="${{ vars.ECR_REPOSITORY_URL }}:${GITHUB_SHA::12}"
-          docker build -t "$image" .
+          docker build --tag "$image" .
           docker push "$image"
           echo "IMAGE=$image" >> "$GITHUB_ENV"
 

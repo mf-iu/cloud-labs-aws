@@ -2,12 +2,12 @@
 # Shared helpers for all lab scripts.
 # Source this file from a script; do not execute it directly.
 
-set -Eeuo pipefail
+set -o errexit -o errtrace -o nounset -o pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STATE_DIR="$REPO_ROOT/.state"
 DATA_DIR="$STATE_DIR/data"
-mkdir -p "$STATE_DIR" "$DATA_DIR"
+mkdir --parents "$STATE_DIR" "$DATA_DIR"
 
 # Personal settings (copied from config.example.env, never committed)
 if [[ ! -f "$REPO_ROOT/config.env" ]]; then
@@ -57,7 +57,7 @@ suffix() {
 name() { echo "${PREFIX}-${OWNER}-$1"; }
 
 # Public IPv4 address of this computer, used for firewall rules
-my_ip() { curl -fsS --max-time 10 https://checkip.amazonaws.com | tr -d '[:space:]'; }
+my_ip() { curl --fail --silent --show-error --max-time 10 https://checkip.amazonaws.com | tr --delete '[:space:]'; }
 
 # Password with upper and lower case letters, digits and a symbol
 random_password() {
@@ -79,7 +79,7 @@ load_state() {   # load_state <lab>
     source "$file"
   fi
 }
-clear_state() { rm -f "$(state_file "$1")"; }
+clear_state() { rm --force "$(state_file "$1")"; }
 
 # Replace a placeholder like __REPO__ in a template file and print the result
 render() {   # render <file> KEY=value ...
@@ -110,7 +110,7 @@ check_repo_ref() {   # check_repo_ref <repository url> <tag or branch>
 wait_for_http() {   # wait_for_http <url> [timeout seconds]
   local url=$1 timeout=${2:-300} start=$SECONDS
   log "Waiting for $url (up to ${timeout}s; no answer yet is normal at first) ..."
-  until curl -fs -o /dev/null --max-time 5 "$url"; do
+  until curl --fail --silent --output /dev/null --max-time 5 "$url"; do
     if (( SECONDS - start > timeout )); then
       warn "No answer from $url after ${timeout}s"
       return 1
@@ -129,8 +129,8 @@ download_geonames() {   # download_geonames <name>
   local name=$1 txt="$DATA_DIR/$1.txt"
   if [[ ! -s "$txt" ]]; then
     log "Downloading $name from GeoNames ..."
-    curl -fsSL -o "$DATA_DIR/$name.zip" "https://download.geonames.org/export/dump/$name.zip"
-    python3 -m zipfile -e "$DATA_DIR/$name.zip" "$DATA_DIR"
+    curl --fail --silent --show-error --location --output "$DATA_DIR/$name.zip" "https://download.geonames.org/export/dump/$name.zip"
+    python3 -m zipfile --extract "$DATA_DIR/$name.zip" "$DATA_DIR"
   fi
   echo "$txt"
 }
@@ -144,7 +144,7 @@ psql_run() {
     psql "$@"
   else
     require docker
-    docker run --rm -i --network host -e PGOPTIONS -v "$REPO_ROOT:$REPO_ROOT" -w "$PWD" \
+    docker run --rm --interactive --network host --env PGOPTIONS --volume "$REPO_ROOT:$REPO_ROOT" --workdir "$PWD" \
       postgres:18-alpine psql "$@"
   fi
 }

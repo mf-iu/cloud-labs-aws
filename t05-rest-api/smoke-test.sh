@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Check the PlaceFinder API of session 5 against a base URL.
 # Usage: ./smoke-test.sh <base url>   e.g. https://placefinder.example.net
-set -euo pipefail
+set -o errexit -o nounset -o pipefail
 base="${1:?Usage: $0 <base url>}"
 base="${base%/}"
 fail=0
@@ -9,7 +9,7 @@ fail=0
 check() {   # check <description> <expected status> <curl arguments...>
   local what=$1 expected=$2 status
   shift 2
-  status=$(curl -sS -o /dev/null -w '%{http_code}' "$@") || status="error"
+  status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "$@") || status="error"
   if [[ "$status" == "$expected" ]]; then
     printf '  \033[32mOK\033[0m   %-45s %s\n' "$what" "$status"
   else
@@ -26,14 +26,14 @@ check "GET /v1/places/0 (unknown)" 404 "$base/v1/places/0"
 check "GET /v1/places?bbox=13.0,52.3 (invalid)" 422 "$base/v1/places?bbox=13.0,52.3"
 
 # Conditional request: the second call with the ETag must return 304
-etag=$(curl -sS -D - -o /dev/null "$base/v1/places/2950159" | tr -d '\r' \
+etag=$(curl --silent --show-error --dump-header - --output /dev/null "$base/v1/places/2950159" | tr --delete '\r' \
   | awk 'tolower($1) == "etag:" { $1 = ""; sub(/^ /, ""); print }')
 if [[ -n "$etag" ]]; then
-  check "GET with If-None-Match: $etag" 304 -H "If-None-Match: $etag" "$base/v1/places/2950159"
+  check "GET with If-None-Match: $etag" 304 --header "If-None-Match: $etag" "$base/v1/places/2950159"
 else
   printf '  \033[33mSKIP\033[0m %-45s no ETag header\n' "conditional request"
 fi
 
 echo
-curl -sS -i "$base/v1/places?bbox=13.0,52.3" | head -n 20
+curl --silent --show-error --include "$base/v1/places?bbox=13.0,52.3" | head --lines 20
 exit "$fail"

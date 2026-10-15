@@ -17,7 +17,7 @@ region="${1:-europe/germany/thueringen}"
 pbf="$DATA_DIR/$(basename "$region")-latest.osm.pbf"
 if [[ ! -s "$pbf" ]]; then
   log "Downloading $region from Geofabrik ..."
-  curl -fsSL -o "$pbf" "https://download.geofabrik.de/$region-latest.osm.pbf"
+  curl --fail --silent --show-error --location --output "$pbf" "https://download.geofabrik.de/$region-latest.osm.pbf"
 fi
 cd "$(dirname "$0")"
 
@@ -25,6 +25,6 @@ log "Importing points of interest with osm2pgsql ..."
 osm2pgsql --output=flex --style=pois.lua --database="$DATABASE_URL" "$pbf"
 
 log "Creating geography column and index ..."
-psql_run "$DATABASE_URL" -v ON_ERROR_STOP=1 -f pois.sql
+psql_run "$DATABASE_URL" --set ON_ERROR_STOP=1 --file pois.sql
 
 log "Done: table pois. Data © OpenStreetMap contributors (ODbL)."

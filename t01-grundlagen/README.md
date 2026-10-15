@@ -44,13 +44,13 @@ Ab jetzt nur noch mit dem IAM-Benutzer arbeiten; den Root-Benutzer nur für Kont
 Im Terminal des Dev Containers (siehe [README](../README.md#arbeitsumgebung-dev-container)):
 
 ```bash
-cd /workspaces/cloud-labs-aws/t01-grundlagen   # Ordner dieser Übung
-cp -i ../config.example.env ../config.env      # OWNER, ALERT_EMAIL usw. eintragen
-aws --version                                  # mindestens 2.32
+cd /workspaces/cloud-labs-aws/t01-grundlagen          # Ordner dieser Übung
+cp --interactive ../config.example.env ../config.env  # OWNER, ALERT_EMAIL usw. eintragen
+aws --version                                         # mindestens 2.32
 aws login --remote --region eu-central-1
 ```
 
-`cp -i` fragt nach, falls `config.env` schon existiert (z. B. aus der Einrichtung im [README](../README.md#einrichtung)); dann mit `n` antworten und die vorhandene Datei behalten.
+`cp --interactive` fragt nach, falls `config.env` schon existiert (z. B. aus der Einrichtung im [README](../README.md#einrichtung)); dann mit `n` antworten und die vorhandene Datei behalten.
 
 `aws login --remote` gibt eine URL aus. Die URL im Browser öffnen, mit dem IAM-Benutzer anmelden und den angezeigten Code in das Terminal kopieren. Die CLI erhält damit kurzlebige Zugangsdaten, die sie bis zu zwölf Stunden selbst erneuert; es gibt keine dauerhaften Access Keys, die verloren gehen könnten. Danach:
 

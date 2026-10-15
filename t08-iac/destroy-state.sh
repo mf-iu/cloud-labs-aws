@@ -26,5 +26,5 @@ for i in range(0, len(objects), 1000):
 print(f"deleted {len(objects)} object versions")
 PY
 aws s3api delete-bucket --bucket "$bucket"
-rm -f "$STATE_DIR/backend.hcl"
+rm --force "$STATE_DIR/backend.hcl"
 log "State bucket deleted."

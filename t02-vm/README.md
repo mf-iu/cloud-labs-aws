@@ -27,7 +27,7 @@ Das Skript
 
 ```bash
 ssh ubuntu@<ip> cloud-init status --wait     # Einrichtung abgeschlossen?
-ssh ubuntu@<ip> journalctl -u placefinder -n 50
+ssh ubuntu@<ip> journalctl --unit placefinder --lines 50
 curl "http://<ip>:8000/places?q=Erfurt"
 ```
 

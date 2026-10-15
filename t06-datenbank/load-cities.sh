@@ -23,15 +23,15 @@ fi
 cd "$(dirname "$0")"
 
 log "Creating table places ..."
-psql_run "$DATABASE_URL" -v ON_ERROR_STOP=1 -f schema.sql
+psql_run "$DATABASE_URL" --set ON_ERROR_STOP=1 --file schema.sql
 
-log "Importing $(wc -l <"$file") places from $(basename "$file") with COPY ..."
+log "Importing $(wc --lines <"$file") places from $(basename "$file") with COPY ..."
 # CSV format with a tab delimiter turns empty fields into NULL.
 # The quote character \x01 never occurs in the data.
-psql_run "$DATABASE_URL" -v ON_ERROR_STOP=1 -c \
+psql_run "$DATABASE_URL" --set ON_ERROR_STOP=1 --command \
   "\\copy places FROM '$file' WITH (FORMAT csv, DELIMITER E'\\t', QUOTE E'\\x01')"
 
 log "Creating geography column and indexes ..."
-psql_run "$DATABASE_URL" -v ON_ERROR_STOP=1 -f indexes.sql
+psql_run "$DATABASE_URL" --set ON_ERROR_STOP=1 --file indexes.sql
 
 log "Done. Try the example queries: ./query.sh"

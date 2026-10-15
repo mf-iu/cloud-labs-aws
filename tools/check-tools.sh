@@ -3,7 +3,7 @@
 # Runs when the dev container is created; run it again at any time.
 # Needs neither config.env nor a cloud login.
 # Usage: tools/check-tools.sh
-set -uo pipefail
+set -o nounset -o pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # The dev container sets COURSE_PROVIDER; otherwise take it from the folder name
@@ -18,7 +18,7 @@ report() {   # report <status> <tool> <text>
 }
 
 # version_ge 2.32.1 2.32 -> true
-version_ge() { [[ "$(printf '%s\n%s\n' "$2" "$1" | sort -V | head -n 1)" == "$2" ]]; }
+version_ge() { [[ "$(printf '%s\n%s\n' "$2" "$1" | sort --version-sort | head --lines 1)" == "$2" ]]; }
 
 # check <tool> <minimum version or -> <command printing the version ...>
 check() {
@@ -29,7 +29,7 @@ check() {
     return
   fi
   # sed reads the whole output, so the tool never gets SIGPIPE
-  version="$("$@" 2>&1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | sed -n 1p)"
+  version="$("$@" 2>&1 | grep --only-matching --extended-regexp '[0-9]+\.[0-9]+(\.[0-9]+)?' | sed --quiet 1p)"
   if [[ "$min" != - ]] && ! version_ge "${version:-0}" "$min"; then
     report "TOO OLD" "$tool" "${version:-unknown}, at least $min needed"
   else
@@ -60,7 +60,7 @@ check tofu      1.10 tofu version
 check gh        -    gh --version
 case "$provider" in
   aws)   check aws 2.32 aws --version ;;
-  azure) check az - az version --query '"azure-cli"' -o tsv
+  azure) check az - az version --query '"azure-cli"' --output tsv
          check func 4 func --version ;;
   gcp)   check gcloud - gcloud --version
          check bq - bq version ;;

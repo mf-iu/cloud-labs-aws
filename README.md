@@ -19,7 +19,7 @@ Der Ordner `.devcontainer/` beschreibt einen Container mit allen Werkzeugen der 
 **Starten** (im Ubuntu-Terminal von WSL):
 
 ```bash
-mkdir -p ~/kurs && cd ~/kurs
+mkdir --parents ~/kurs && cd ~/kurs
 git clone https://github.com/mf-iu/cloud-labs-aws.git
 git clone https://github.com/<github-user>/placefinder.git   # eigener Fork
 code cloud-labs-aws

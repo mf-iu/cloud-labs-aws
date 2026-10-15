@@ -9,7 +9,7 @@ AWS App Runner nimmt seit 30. April 2026 keine neuen Kunden mehr an; AWS empfieh
 ## Voraussetzungen
 
 - Docker im Dev Container
-- Image `$PLACEFINDER_IMAGE:t03` (öffentlich auf ghcr.io oder lokal gebaut: `docker build -t ghcr.io/<user>/placefinder:t03 .`)
+- Image `$PLACEFINDER_IMAGE:t03` (öffentlich auf ghcr.io oder lokal gebaut: `docker build --tag ghcr.io/<user>/placefinder:t03 .`)
 - Das Konto hat eine Default-VPC (Standard bei neuen Konten). Express Mode legt Load Balancer und Tasks dort an.
 
 ## Schritte
@@ -30,7 +30,7 @@ aws ecs describe-express-gateway-service --service-arn <arn> --query service.sta
 ## Prüfen
 
 ```bash
-url=$(grep SERVICE_URL ../.state/t03.env | cut -d= -f2)
+url=$(grep SERVICE_URL ../.state/t03.env | cut --delimiter = --fields 2)
 curl "$url/health"
 curl "$url/places?q=Berlin"
 aws ecr describe-image-scan-findings --repository-name pf-<owner>-placefinder --image-id imageTag=t03

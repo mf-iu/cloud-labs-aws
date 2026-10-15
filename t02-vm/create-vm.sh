@@ -29,7 +29,7 @@ aws ec2 authorize-security-group-ingress --group-id "$sg" --ip-permissions \
   >/dev/null
 
 user_data=$(mktemp)
-trap 'rm -f "$user_data"' EXIT
+trap 'rm --force "$user_data"' EXIT
 render "$(dirname "$0")/cloud-init.yaml" "REPO=$PLACEFINDER_REPO" "REF=$ref" >"$user_data"
 
 vm_name=$(name "$LAB-vm")
@@ -59,4 +59,4 @@ VM $instance is running.
   API:          http://$public_ip:8000/places?q=Erfurt
   Delete:       ./destroy-vm.sh
 INFO
-wait_for_http "http://$public_ip:8000/health" 600 || warn "Check the log on the VM: journalctl -u placefinder"
+wait_for_http "http://$public_ip:8000/health" 600 || warn "Check the log on the VM: journalctl --unit placefinder"

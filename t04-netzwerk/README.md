@@ -44,7 +44,7 @@ Netzwerkdiagnose von außen, z. B. gegen die eigene API aus Termin 3 oder einen 
 ./diagnose.sh www.openstreetmap.org
 ```
 
-Das Skript zeigt nacheinander DNS-Antworten, die Delegation ab der Root-Zone (`dig +trace`), Verbindungsaufbau und TLS-Handshake (`curl -v`) und die Zertifikatskette (`openssl s_client`).
+Das Skript zeigt nacheinander DNS-Antworten, die Delegation ab der Root-Zone (`dig +trace`), Verbindungsaufbau und TLS-Handshake (`curl --verbose`) und die Zertifikatskette (`openssl s_client`).
 
 ## Aufräumen
 

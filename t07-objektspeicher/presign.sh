@@ -12,7 +12,7 @@ url=$(aws s3 presign "s3://$BUCKET/$key" --expires-in 3600)
 printf '\nPre-signed URL (1 hour):\n%s\n\n' "$url"
 
 log "Without signature the object is private (expect 403):"
-curl -s -o /dev/null -w '%{http_code}\n' "https://$BUCKET.s3.$AWS_REGION.amazonaws.com/$key"
+curl --silent --output /dev/null --write-out '%{http_code}\n' "https://$BUCKET.s3.$AWS_REGION.amazonaws.com/$key"
 
 log "Range request for the first 100 bytes (expect 206 Partial Content):"
-curl -s -D - -o /dev/null -r 0-99 "$url" | grep -iE '^HTTP|^content-range|^content-length'
+curl --silent --dump-header - --output /dev/null --range 0-99 "$url" | grep --ignore-case --extended-regexp '^HTTP|^content-range|^content-length'

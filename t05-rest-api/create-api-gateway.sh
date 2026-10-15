@@ -37,6 +37,6 @@ cat <<INFO
 
 API Gateway: $endpoint
   Test:        ./smoke-test.sh $endpoint
-  Rate limit:  for i in \$(seq 30); do curl -s -o /dev/null -w '%{http_code} ' $endpoint/health; done
+  Rate limit:  for i in \$(seq 30); do curl --silent --output /dev/null --write-out '%{http_code} ' $endpoint/health; done
   Delete:      ./destroy-api-gateway.sh
 INFO

@@ -19,7 +19,7 @@
   },
 
   // SSH keys and the AWS login stay in WSL and survive a rebuild of the container
-  "initializeCommand": "mkdir -p \"$HOME/.ssh\" \"$HOME/.aws\"",
+  "initializeCommand": "mkdir --parents \"$HOME/.ssh\" \"$HOME/.aws\"",
   "mounts": [
     "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind",
     "source=${localEnv:HOME}/.aws,target=/home/vscode/.aws,type=bind"
