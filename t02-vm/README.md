@@ -54,7 +54,7 @@ Die Container-Übungen von Termin 2 hängen nicht vom Anbieter ab. Sie stehen in
 - `compose.yaml` mit PlaceFinder und PostGIS (Selbstlernphase)
 - optional: Image verkleinern und mit Trivy scannen; Image in die GitHub Container Registry laden (für Termin 3 nötig)
 
-Alle Container-Befehle laufen im **Dev Container** (`cd /workspaces/placefinder`). Er hat eine eigene Docker Engine; einmal `docker login` ausführen, damit das Pull-Limit von Docker Hub nicht greift.
+Alle Container-Befehle laufen im **Dev Container** (`cd /workspaces/placefinder`). Er hat eine eigene Docker Engine. Ob eine Anmeldung bei Docker Hub nötig ist und was bei `toomanyrequests` hilft, steht im README von PlaceFinder unter [Docker Hub: anmelden oder nicht?](https://github.com/mf-iu/placefinder#docker-hub-anmelden-oder-nicht).
 
 Die Musterlösung holt man so in den eigenen Fork:
 
