@@ -46,6 +46,25 @@ Die IP-Adresse steht in der Ausgabe von `create-vm.sh` und in `../.state/t02.env
 - Was passiert mit der Anwendung, wenn die VM neu startet? Und wenn sie beendet und neu angelegt wird?
 - Wie würde man die API über HTTPS anbieten?
 
+## Container und Compose
+
+Die Container-Übungen von Termin 2 hängen nicht vom Anbieter ab. Sie stehen in der README von PlaceFinder, Abschnitt *Container* (Musterlösung ab Tag `t02`):
+
+- Dockerfile und `.dockerignore` schreiben, Image bauen, starten, Schichten ansehen (Übung im Termin)
+- `compose.yaml` mit PlaceFinder und PostGIS (Selbstlernphase)
+- optional: Image verkleinern und mit Trivy scannen; Image in die GitHub Container Registry laden (für Termin 3 nötig)
+
+Alle Container-Befehle laufen im **Dev Container** (`cd /workspaces/placefinder`). Er hat eine eigene Docker Engine; einmal `docker login` ausführen, damit das Pull-Limit von Docker Hub nicht greift.
+
+Die Musterlösung holt man so in den eigenen Fork:
+
+```bash
+cd /workspaces/placefinder
+git remote add upstream https://github.com/mf-iu/placefinder.git   # einmalig
+git fetch upstream --tags
+git diff t02 -- Dockerfile compose.yaml      # eigene Lösung mit der Musterlösung vergleichen
+```
+
 ## Andere Anbieter
 
 | | AWS | Azure | Google Cloud |
