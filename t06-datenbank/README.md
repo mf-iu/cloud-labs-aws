@@ -19,9 +19,32 @@
 
 ### Lokale Datenbank und andere Dateien
 
-Die Skripte nutzen `DATABASE_URL`, wenn die Variable gesetzt ist – zum Beispiel für die lokale PostGIS-Instanz aus `compose.yaml` (Termin 2; dort für die Datenbank `ports: ["127.0.0.1:5432:5432"]` ergänzen):
+Die Skripte nutzen `DATABASE_URL`, wenn die Variable gesetzt ist – zum Beispiel für eine lokale Datenbank mit PostGIS. Dafür in `compose.yaml` von PlaceFinder (aus Termin 2) einen Dienst `db` und ein Volume `pgdata` ergänzen. Den Übungsdienst `web` aus Termin 2 braucht PlaceFinder nicht; er kann bleiben oder entfallen.
+
+```yaml
+services:
+  # api (and web) as before
+  db:
+    image: postgis/postgis:18-3.6        # PostgreSQL 18 with PostGIS 3.6 (amd64 only)
+    environment:
+      POSTGRES_USER: pf
+      POSTGRES_PASSWORD: pf              # plain text for local development only
+      POSTGRES_DB: pf
+    ports: ["127.0.0.1:5432:5432"]       # reachable from this computer only
+    # from PostgreSQL 18 on, the volume belongs at /var/lib/postgresql
+    volumes: [pgdata:/var/lib/postgresql]
+    healthcheck:
+      # -h 127.0.0.1: check via TCP, the init server only listens on the socket
+      test: pg_isready -h 127.0.0.1 -U pf
+      interval: 5s
+
+volumes:
+  www:
+  pgdata:
+```
 
 ```bash
+(cd /workspaces/placefinder && docker compose up -d db)   # db: healthy in docker compose ps
 export DATABASE_URL=postgresql://pf:pf@localhost:5432/pf
 export PGOPTIONS="-c jit=off -c max_parallel_workers_per_gather=0"   # einfache Pläne
 ./load-cities.sh
