@@ -90,7 +90,7 @@ ec2 authorize-security-group-ingress --group-id "$sg_db" --protocol tcp --port 5
   --source-group "$sg_app" >/dev/null
 
 if $with_nat; then
-  warn "The NAT gateway costs about 0.045 USD per hour plus data. Delete it today!"
+  warn "The NAT gateway costs about 0.05 USD per hour in Frankfurt plus data. Delete it today!"
   eip=$(ec2 allocate-address --domain vpc \
     --tag-specifications "$(tag_spec elastic-ip "$LAB" "$(name nat-ip)")" \
     --query AllocationId --output text)
