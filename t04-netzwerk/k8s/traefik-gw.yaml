@@ -1,0 +1,13 @@
+# Switch on the Gateway API provider of the Traefik that comes with k3s.
+# k3s applies the values to its Traefik Helm chart and restarts Traefik;
+# Traefik then creates the GatewayClass "traefik".
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    providers:
+      kubernetesGateway:
+        enabled: true

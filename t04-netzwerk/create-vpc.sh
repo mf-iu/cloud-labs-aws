@@ -4,7 +4,9 @@
 # availability zones, routing tables and security groups.
 #
 # Usage: ./create-vpc.sh [--with-vm] [--with-nat]
-#   --with-vm   test VM in the public subnet (SSH from your IP only)
+#   --with-vm   two test VMs: a bastion in the public subnet (SSH from your IP
+#               only) and a VM without public address in the application
+#               subnet (SSH only from the bastion); check with ./check-vpc.sh
 #   --with-nat  NAT gateway for the application subnets (about 1 USD per day!)
 source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
@@ -101,26 +103,44 @@ if $with_nat; then
   ec2 wait nat-gateway-available --nat-gateway-ids "$nat"
   ec2 create-route --route-table-id "$rt_app" --destination-cidr-block 0.0.0.0/0 \
     --nat-gateway-id "$nat" >/dev/null
+  save_state "$LAB" NAT true
 fi
 
 if $with_vm; then
   ip=$(my_ip)
   key=$(ensure_key_pair "$LAB")
+  ami=$(ubuntu_ami amd64)
+  log "Creating security groups for SSH: bastion (22 from $ip), private VM (22 from the bastion) ..."
   sg_ssh=$(security_group sg-ssh "SSH from my IP, lab $LAB")
-  save_state "$LAB" SSH_SECURITY_GROUP_ID "$sg_ssh"
+  sg_ssh_bastion=$(security_group sg-ssh-from-bastion "SSH from the bastion, lab $LAB")
+  save_state "$LAB" SSH_SECURITY_GROUP_IDS "$sg_ssh $sg_ssh_bastion"
   ec2 authorize-security-group-ingress --group-id "$sg_ssh" --protocol tcp --port 22 \
     --cidr "$ip/32" >/dev/null
-  vm=$(ec2 run-instances --image-id "$(ubuntu_ami amd64)" --instance-type t3.micro \
-    --key-name "$key" \
-    --network-interfaces "DeviceIndex=0,SubnetId=$public_a,Groups=$sg_ssh,AssociatePublicIpAddress=true" \
-    --metadata-options HttpTokens=required \
-    --tag-specifications "$(tag_spec instance "$LAB" "$(name "$LAB-vm")")" \
-    --query 'Instances[0].InstanceId' --output text)
-  save_state "$LAB" INSTANCE_ID "$vm"
-  ec2 wait instance-running --instance-ids "$vm"
-  public_ip=$(ec2 describe-instances --instance-ids "$vm" \
+  ec2 authorize-security-group-ingress --group-id "$sg_ssh_bastion" --protocol tcp --port 22 \
+    --source-group "$sg_ssh" >/dev/null
+
+  vm() {   # vm <name> <subnet> <public address flag> <security groups...>; prints the instance id
+    ec2 run-instances --image-id "$ami" --instance-type t3.micro --key-name "$key" \
+      --subnet-id "$2" "$3" --security-group-ids "${@:4}" \
+      --metadata-options HttpTokens=required \
+      --tag-specifications "$(tag_spec instance "$LAB" "$(name "$LAB-$1")")" \
+      --query 'Instances[0].InstanceId' --output text
+  }
+  log "Creating the bastion in public-a and a private VM in app-a ..."
+  bastion=$(vm bastion "$public_a" --associate-public-ip-address "$sg_ssh")
+  private=$(vm private "$app_a" --no-associate-public-ip-address "$sg_app" "$sg_ssh_bastion")
+  save_state "$LAB" INSTANCE_IDS "$bastion $private"
+  ec2 wait instance-running --instance-ids "$bastion" "$private"
+  bastion_ip=$(ec2 describe-instances --instance-ids "$bastion" \
     --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
-  log "Test VM: ssh ubuntu@$public_ip"
+  private_ip=$(ec2 describe-instances --instance-ids "$private" \
+    --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
+  save_state "$LAB" SSH_USER ubuntu
+  save_state "$LAB" BASTION_IP "$bastion_ip"
+  save_state "$LAB" PRIVATE_IP "$private_ip"
+  log "Bastion:    ssh ubuntu@$bastion_ip"
+  log "Private VM: ssh -J ubuntu@$bastion_ip ubuntu@$private_ip"
+  log "Check both: ./check-vpc.sh (the VMs need about a minute to start SSH)"
 fi
 
 log "Network created. Overview:"

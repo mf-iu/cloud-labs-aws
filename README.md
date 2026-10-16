@@ -69,7 +69,7 @@ t01-grundlagen/check-cli.sh                # prüft CLI, Anmeldung und Region
 | 1 | [t01-grundlagen](t01-grundlagen/README.md) | Konto absichern, CLI-Anmeldung, Budget-Alarm | AWS CLI |
 | 2 | [t02-vm](t02-vm/README.md) | PlaceFinder v0 per cloud-init auf einer EC2-VM (IaaS) | AWS CLI |
 | 3 | [t03-container](t03-container/README.md) | Lokaler Kubernetes-Cluster mit k3d; Image in Amazon ECR, Betrieb mit ECS Express Mode (Serverless Container) | k3d, kubectl, Docker, AWS CLI |
-| 4 | [t04-netzwerk](t04-netzwerk/README.md) | VPC mit öffentlichen und privaten Subnetzen, Security Groups, Diagnose | AWS CLI |
+| 4 | [t04-netzwerk](t04-netzwerk/README.md) | VPC mit öffentlichen und privaten Subnetzen, Security Groups, Test-VMs mit Bastion-Host, Diagnose; lokal Gateway API und TLS mit cert-manager | AWS CLI, k3d, kubectl, Helm |
 | 5 | [t05-rest-api](t05-rest-api/README.md) | Neue API-Version ausrollen und testen, API Gateway mit Rate Limit | AWS CLI |
 | 6 | [t06-datenbank](t06-datenbank/README.md) | RDS for PostgreSQL mit PostGIS, Import von cities15000, räumliche Abfragen | AWS CLI, psql |
 | 7 | [t07-objektspeicher](t07-objektspeicher/README.md) | S3-Bucket, Pre-Signed URLs, Range Requests, CORS, Lebenszyklusregeln | AWS CLI |

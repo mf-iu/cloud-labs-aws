@@ -8,13 +8,15 @@ LAB=t04
 check_login
 load_state "$LAB"
 [[ -n "${VPC_ID:-}" ]] || { log "Nothing to delete."; exit 0; }
-confirm "Delete VPC $VPC_ID with all subnets, gateways and the test VM?" || exit 0
+confirm "Delete VPC $VPC_ID with all subnets, gateways and test VMs?" || exit 0
 ec2() { aws ec2 "$@"; }
 
-if [[ -n "${INSTANCE_ID:-}" ]]; then
-  log "Terminating test VM ..."
-  ec2 terminate-instances --instance-ids "$INSTANCE_ID" >/dev/null
-  ec2 wait instance-terminated --instance-ids "$INSTANCE_ID"
+if [[ -n "${INSTANCE_IDS:-}" ]]; then
+  log "Terminating test VMs ..."
+  # shellcheck disable=SC2086  # several ids on purpose
+  ec2 terminate-instances --instance-ids $INSTANCE_IDS >/dev/null
+  # shellcheck disable=SC2086
+  ec2 wait instance-terminated --instance-ids $INSTANCE_IDS
 fi
 if [[ -n "${NAT_GATEWAY_ID:-}" ]]; then
   log "Deleting NAT gateway ..."
@@ -25,7 +27,7 @@ if [[ -n "${EIP_ALLOCATION_ID:-}" ]]; then
   ec2 release-address --allocation-id "$EIP_ALLOCATION_ID"
 fi
 # Remove the cross references between the groups before deleting them
-for sg in ${SECURITY_GROUP_IDS:-}; do
+for sg in ${SECURITY_GROUP_IDS:-} ${SSH_SECURITY_GROUP_IDS:-}; do
   rules=$(ec2 describe-security-group-rules --filters "Name=group-id,Values=$sg" \
     --query 'SecurityGroupRules[?!IsEgress].SecurityGroupRuleId' --output text)
   if [[ -n "$rules" ]]; then
@@ -33,7 +35,7 @@ for sg in ${SECURITY_GROUP_IDS:-}; do
     ec2 revoke-security-group-ingress --group-id "$sg" --security-group-rule-ids $rules >/dev/null
   fi
 done
-for sg in ${SECURITY_GROUP_IDS:-} ${SSH_SECURITY_GROUP_ID:-}; do
+for sg in ${SECURITY_GROUP_IDS:-} ${SSH_SECURITY_GROUP_IDS:-}; do
   ec2 delete-security-group --group-id "$sg"
 done
 for table in ${ROUTE_TABLE_IDS:-}; do
@@ -55,4 +57,5 @@ if [[ ! -f "$(state_file t02)" ]]; then
   ec2 delete-key-pair --key-name "$(name key)" >/dev/null || true
 fi
 clear_state "$LAB"
+rm --force "$STATE_DIR/$LAB.known_hosts"   # host keys of the test VMs (check-vpc.sh)
 log "Network deleted."
