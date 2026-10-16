@@ -28,6 +28,8 @@ log "Logging in to $registry ..."
 aws ecr get-login-password | docker login --username AWS --password-stdin "$registry"
 
 if ! docker image inspect "$source_image" >/dev/null 2>&1; then
+  check_public_image "$source_image" \
+    || die "Cannot pull $source_image without login: it does not exist or is private. Run ./build-image.sh --push and make the package public on GitHub."
   log "Pulling $source_image ..."
   docker pull --platform linux/amd64 "$source_image"
 fi

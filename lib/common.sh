@@ -16,6 +16,10 @@ if [[ ! -f "$REPO_ROOT/config.env" ]]; then
 fi
 # shellcheck source=/dev/null
 source "$REPO_ROOT/config.env"
+# Image names must be lowercase, GitHub user names need not be
+if [[ -n "${PLACEFINDER_IMAGE:-}" ]]; then
+  PLACEFINDER_IMAGE="${PLACEFINDER_IMAGE,,}"
+fi
 
 # Tag or label value that marks every resource of the course
 # shellcheck disable=SC2034  # used by provider.sh and the lab scripts
@@ -102,6 +106,28 @@ check_repo_ref() {   # check_repo_ref <repository url> <tag or branch>
   GIT_TERMINAL_PROMPT=0 git -c credential.helper= ls-remote --exit-code \
       "$repo" "refs/tags/$ref" "refs/heads/$ref" >/dev/null 2>&1 \
     || die "Cannot read '$ref' from $repo. Check GITHUB_USER in config.env, make the repository public and push the tags (git push origin --tags)."
+}
+
+# Check that an image on ghcr.io can be pulled without logging in. New
+# packages on GitHub are private until their visibility is changed.
+check_public_image() {   # check_public_image <ghcr.io/owner/name:tag>
+  local image=$1 repo tag token
+  [[ "$image" == ghcr.io/* ]] || return 0
+  repo=${image#ghcr.io/}
+  tag=${repo##*:}
+  repo=${repo%:*}
+  token=$(curl --fail --silent --max-time 10 "https://ghcr.io/token?scope=repository:$repo:pull" \
+    | python3 -c 'import json, sys; print(json.load(sys.stdin)["token"])' 2>/dev/null) || return 1
+  curl --fail --silent --head --output /dev/null --max-time 10 \
+    --header "Authorization: Bearer $token" \
+    --header "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json" \
+    "https://ghcr.io/v2/$repo/manifests/$tag"
+}
+
+# Does a local k3d cluster with this name exist?
+k3d_cluster_exists() {   # k3d_cluster_exists <name>
+  k3d cluster list --output json 2>/dev/null \
+    | python3 -c 'import json, sys; sys.exit(not any(c["name"] == sys.argv[1] for c in json.load(sys.stdin)))' "$1"
 }
 
 # Wait until a URL answers with a 2xx or 3xx status. Failed attempts are
