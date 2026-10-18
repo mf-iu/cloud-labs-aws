@@ -1,39 +1,157 @@
 #!/usr/bin/env bash
-# Check the PlaceFinder API of session 5 against a base URL.
-# Usage: ./smoke-test.sh <base url>   e.g. https://placefinder.example.net
-set -o errexit -o nounset -o pipefail
-base="${1:?Usage: $0 <base url>}"
-base="${base%/}"
-fail=0
+# Check the REST API of PlaceFinder (tag t05 or later) against a base URL:
+# GeoJSON, filters, pagination, caching headers, conditional requests,
+# problem details (RFC 9457), CORS and the deprecation of version 0.
+# Only GET requests, so it is safe against every instance.
+#
+# Usage: ./smoke-test.sh [--gateway] [--header 'Name: value'] [base url]
+#   base url   default: the service from t03 (SERVICE_URL in ../.state/t03.env)
+#   --gateway  the API gateway from create-api-gateway.sh, with its key
+#   --header   send this header with every request, e.g. an API key
+# Examples: ./smoke-test.sh http://localhost:8000
+#           ./smoke-test.sh --gateway
+source "$(dirname "$0")/../lib/common.sh"
 
-check() {   # check <description> <expected status> <curl arguments...>
-  local what=$1 expected=$2 status
-  shift 2
-  status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "$@") || status="error"
-  if [[ "$status" == "$expected" ]]; then
-    printf '  \033[32mOK\033[0m   %-45s %s\n' "$what" "$status"
-  else
-    printf '  \033[31mFAIL\033[0m %-45s %s (expected %s)\n' "$what" "$status" "$expected"
-    fail=1
-  fi
+USAGE="Usage: ./smoke-test.sh [--gateway] [--header 'Name: value'] [base url]"
+ERFURT=2929670
+ORIGIN=http://localhost:5173     # the map of PlaceFinder, allowed by CORS
+PROBLEMS=https://placefinder.test/problems
+gateway=0
+headers=()
+base=""
+while (( $# )); do
+  case "$1" in
+    --gateway) gateway=1 ;;
+    --header) (( $# > 1 )) || die "$USAGE"; headers+=(--header "$2"); shift ;;
+    -*) die "Unknown option $1. $USAGE" ;;
+    *) base=$1 ;;
+  esac
+  shift
+done
+require curl python3
+if (( gateway )); then
+  load_state t05
+  [[ -n "${API_URL:-}" ]] || die "No API gateway. Run ./create-api-gateway.sh first."
+  base=${base:-$API_URL}
+  [[ -z "${API_HEADER:-}" ]] || headers+=(--header "$API_HEADER")
+elif [[ -z "$base" ]]; then
+  load_state t03
+  base=${SERVICE_URL:-}
+  [[ -n "$base" ]] || die "No service from t03 and no URL. $USAGE"
+fi
+base=${base%/}
+
+tmp=$(mktemp --directory)
+trap 'rm --recursive --force "$tmp"' EXIT
+status=""
+
+# GET a path (or a link of the API, which starts with /v1/) below the base URL
+fetch() {   # fetch <path> [curl options]; sets $status, saves headers and body
+  local path=$1
+  shift
+  : >"$tmp/body"   # curl leaves the file alone if there is no body (304)
+  status=$(curl --silent --show-error --max-time 30 "${headers[@]}" "$@" \
+    --dump-header "$tmp/headers" --output "$tmp/body" --write-out '%{http_code}' \
+    "$base$path" 2>"$tmp/error") || status="error: $(head --lines 1 "$tmp/error")"
+}
+# Value of a response header of the last request (names are case-insensitive)
+header() {   # header <name>
+  local line
+  while IFS= read -r line; do
+    line=${line%$'\r'}
+    if [[ "${line,,}" == "${1,,}:"* ]]; then
+      line=${line#*:}
+      echo "${line# }"
+      return
+    fi
+  done <"$tmp/headers"
+}
+# Evaluate a Python expression on the JSON body b of the last request
+json() {   # json <expression>
+  python3 -c 'import json, sys; b = json.load(open(sys.argv[1])); print(eval(sys.argv[2]))' \
+    "$tmp/body" "$1" 2>/dev/null || echo "(missing)"
 }
 
-echo "PlaceFinder smoke test against $base"
-check "GET /health" 200 "$base/health"
-check "GET /v1/places?q=Berlin" 200 "$base/v1/places?q=Berlin"
-check "GET /v1/places/2950159 (Berlin)" 200 "$base/v1/places/2950159"
-check "GET /v1/places/0 (unknown)" 404 "$base/v1/places/0"
-check "GET /v1/places?bbox=13.0,52.3 (invalid)" 422 "$base/v1/places?bbox=13.0,52.3"
+failed=0
+check() {   # check <description> <expected> <actual>
+  if [[ "$2" == "$3" ]]; then
+    printf '  \033[32mOK\033[0m    %-48s %s\n' "$1" "$3"
+  else
+    printf '  \033[31mFAIL\033[0m  %-48s %s (expected: %s)\n' "$1" "$3" "$2"
+    failed=$(( failed + 1 ))
+  fi
+}
+section() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 
-# Conditional request: the second call with the ETag must return 304
-etag=$(curl --silent --show-error --dump-header - --output /dev/null "$base/v1/places/2950159" | tr --delete '\r' \
-  | awk 'tolower($1) == "etag:" { $1 = ""; sub(/^ /, ""); print }')
+fetch /
+[[ "$status" != error* ]] || die "No answer from $base: ${status#error: }"
+version=$(json 'b["version"]')
+log "Smoke test of PlaceFinder ${version/(missing)/(version unknown)} at $base"
+
+section "Search: GET /v1/places"
+fetch "/v1/places?q=Erfurt"
+check "q=Erfurt: status" 200 "$status"
+check "media type" application/geo+json "$(header content-type)"
+check "caching header" yes "$( [[ "$(header cache-control)" == *max-age=* ]] && echo yes || echo no)"
+check "FeatureCollection" FeatureCollection "$(json 'b["type"]')"
+check "first feature is Erfurt" "$ERFURT" "$(json 'b["features"][0]["id"]')"
+check "longitude before latitude" "[11, 51]" "$(json '[round(c) for c in b["features"][0]["geometry"]["coordinates"]]')"
+
+fetch "/v1/places?lon=11.03&lat=50.98&radius=25000"
+check "lon, lat, radius: nearest place" Erfurt "$(json 'b["features"][0]["properties"]["name"]')"
+check "distance in meters" yes "$(json '"yes" if b["features"][0]["properties"]["distance"] < 1000 else "no"')"
+
+fetch "/v1/places?bbox=10.9,50.9,11.2,51.1"
+check "bbox around Erfurt contains Erfurt" yes "$(json '"yes" if any(f["id"] == '"$ERFURT"' for f in b["features"]) else "no"')"
+
+section "Pagination"
+fetch "/v1/places?country=DE&limit=2"
+check "country=DE&limit=2: features" 2 "$(json 'len(b["features"])')"
+first_page=$(json '[f["id"] for f in b["features"]]')
+link=$(header link)
+check "header Link with rel=\"next\"" yes "$( [[ "$link" == *'rel="next"'* ]] && echo yes || echo no)"
+next=$(json '[l["href"] for l in b["links"] if l["rel"] == "next"][0]')
+check "link next in the body" yes "$( [[ "$next" == /v1/places\?*cursor=* ]] && echo yes || echo no)"
+fetch "$next"
+check "next page: status" 200 "$status"
+check "next page: other places" yes "$(json '"yes" if not set(f["id"] for f in b["features"]) & set('"$first_page"') else "no"')"
+
+section "One place: ETag and conditional request"
+fetch "/v1/places/$ERFURT"
+check "GET /v1/places/$ERFURT: status" 200 "$status"
+check "media type" application/geo+json "$(header content-type)"
+etag=$(header etag)
+check "header ETag" yes "$( [[ "$etag" == *\"*\" ]] && echo yes || echo no)"
 if [[ -n "$etag" ]]; then
-  check "GET with If-None-Match: $etag" 304 --header "If-None-Match: $etag" "$base/v1/places/2950159"
-else
-  printf '  \033[33mSKIP\033[0m %-45s no ETag header\n' "conditional request"
+  fetch "/v1/places/$ERFURT" --header "If-None-Match: $etag"
+  check "If-None-Match: $etag" 304 "$status"
+  check "304 without body" 0 "$(wc --bytes <"$tmp/body")"
 fi
 
+section "Errors as problem details (RFC 9457)"
+fetch /v1/places/1
+check "unknown place: status" 404 "$status"
+check "media type" application/problem+json "$(header content-type)"
+check "type" "$PROBLEMS/place-not-found" "$(json 'b["type"]')"
+fetch "/v1/places?bbox=11.0,50.9"
+check "bbox with two numbers: status" 422 "$status"
+check "type" "$PROBLEMS/invalid-bbox" "$(json 'b["type"]')"
+problem=$(cat "$tmp/body")
+fetch "/v1/places?limit=500"
+check "limit=500: status" 422 "$status"
+check "type" "$PROBLEMS/invalid-parameters" "$(json 'b["type"]')"
+
+section "CORS and version 0"
+fetch "/v1/places?q=Erfurt" --header "Origin: $ORIGIN"
+check "Origin $ORIGIN allowed" "$ORIGIN" "$(header access-control-allow-origin)"
+fetch "/places?q=Erfurt"
+check "GET /places (version 0): status" 200 "$status"
+check "header Deprecation" yes "$( [[ -n "$(header deprecation)" ]] && echo yes || echo no)"
+check "header Sunset" yes "$( [[ -n "$(header sunset)" ]] && echo yes || echo no)"
+
 echo
-curl --silent --show-error --include "$base/v1/places?bbox=13.0,52.3" | head --lines 20
-exit "$fail"
+echo "Problem details for bbox=11.0,50.9:"
+echo "  $problem"
+echo
+(( failed == 0 )) || die "$failed checks failed."
+log "All checks passed."

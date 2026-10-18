@@ -93,7 +93,7 @@ kubectl rollout status deployment/placefinder --timeout 300s >/dev/null
 kubectl get gateway,httproute,certificate
 
 # 7 HTTPS request, checked against the course CA
-url="https://placefinder.test:$HTTPS_PORT/places?q=Berlin"
+url="https://placefinder.test:$HTTPS_PORT/places?q=Erfurt"
 https() { curl --fail --silent --show-error --cacert "$CA_CERT" \
   --resolve "placefinder.test:$HTTPS_PORT:127.0.0.1" "$@"; }
 wait_until "HTTPS answer from $url" 60 https --output /dev/null "$url"

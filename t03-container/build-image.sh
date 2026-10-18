@@ -2,22 +2,29 @@
 # Build the PlaceFinder image from the repository next to this one and load it
 # into the k3d cluster. With --push, also upload it to the GitHub Container
 # Registry for the container services of the cloud providers.
-# Usage: ./build-image.sh [--push] [version]
+# Usage: ./build-image.sh [--push [--tag <name>]] [version]
 #   version  image tag, default: version in pyproject.toml of PlaceFinder
-#   --push   also push $PLACEFINDER_IMAGE:<version> and $PLACEFINDER_IMAGE:t03
+#   --push   also push $PLACEFINDER_IMAGE:<version> and $PLACEFINDER_IMAGE:<name>
+#   --tag    name of the session state, default: t03 (t05 for session 5 ...)
 source "$(dirname "$0")/../lib/common.sh"
 
 CLUSTER=pf
 SOURCE_DIR=$(realpath --canonicalize-missing "${PLACEFINDER_DIR:-$REPO_ROOT/../placefinder}")
+USAGE="Usage: ./build-image.sh [--push [--tag <name>]] [version]"
 push=0
+state_tag=""
 version=""
-for arg in "$@"; do
-  case "$arg" in
+while (( $# )); do
+  case "$1" in
     --push) push=1 ;;
-    -*) die "Unknown option $arg. Usage: ./build-image.sh [--push] [version]" ;;
-    *) version=$arg ;;
+    --tag) (( $# > 1 )) || die "$USAGE"; state_tag=$2; shift ;;
+    -*) die "Unknown option $1. $USAGE" ;;
+    *) version=$1 ;;
   esac
+  shift
 done
+[[ -z "$state_tag" ]] || (( push )) || die "--tag works only with --push. $USAGE"
+state_tag=${state_tag:-t03}
 require docker python3
 if (( push )); then
   # check before the build, which takes a while
@@ -42,19 +49,19 @@ if command -v k3d >/dev/null 2>&1 && k3d_cluster_exists "$CLUSTER"; then
   # the nodes run their own containerd and do not see the images of Docker
   log "Importing $image into the nodes of cluster $CLUSTER ..."
   k3d image import "$image" --cluster "$CLUSTER"
-else
+elif (( ! push )); then
   warn "No k3d cluster $CLUSTER. Run ./cluster-up.sh, then this script again."
 fi
 
 if (( push )); then
   log "Logging in to ghcr.io as $GITHUB_USER ..."
   gh auth token | docker login ghcr.io --username "$GITHUB_USER" --password-stdin >/dev/null
-  for tag in "$version" t03; do
+  for tag in "$version" "$state_tag"; do
     docker tag "$image" "$PLACEFINDER_IMAGE:$tag"
     docker push "$PLACEFINDER_IMAGE:$tag"
   done
-  if check_public_image "$PLACEFINDER_IMAGE:t03"; then
-    log "$PLACEFINDER_IMAGE:t03 is public."
+  if check_public_image "$PLACEFINDER_IMAGE:$state_tag"; then
+    log "$PLACEFINDER_IMAGE:$state_tag is public."
   else
     warn "$PLACEFINDER_IMAGE is private. Make it public on GitHub: Packages → placefinder → Package settings → Change visibility."
   fi

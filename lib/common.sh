@@ -108,20 +108,34 @@ check_repo_ref() {   # check_repo_ref <repository url> <tag or branch>
     || die "Cannot read '$ref' from $repo. Check GITHUB_USER in config.env, make the repository public and push the tags (git push origin --tags)."
 }
 
-# Check that an image on ghcr.io can be pulled without logging in. New
+# Digest of an image on ghcr.io that can be pulled without logging in, e.g.
+# sha256:4f2c...; fails if the image does not exist or is private. New
 # packages on GitHub are private until their visibility is changed.
-check_public_image() {   # check_public_image <ghcr.io/owner/name:tag>
-  local image=$1 repo tag token
-  [[ "$image" == ghcr.io/* ]] || return 0
+public_image_digest() {   # public_image_digest <ghcr.io/owner/name:tag or @digest>
+  local image=$1 repo ref token
+  [[ "$image" == ghcr.io/* ]] || return 1
   repo=${image#ghcr.io/}
-  tag=${repo##*:}
-  repo=${repo%:*}
+  if [[ "$repo" == *@* ]]; then
+    ref=${repo#*@} repo=${repo%%@*}
+  elif [[ "${repo##*/}" == *:* ]]; then
+    ref=${repo##*:} repo=${repo%:*}
+  else
+    ref=latest
+  fi
   token=$(curl --fail --silent --max-time 10 "https://ghcr.io/token?scope=repository:$repo:pull" \
     | python3 -c 'import json, sys; print(json.load(sys.stdin)["token"])' 2>/dev/null) || return 1
-  curl --fail --silent --head --output /dev/null --max-time 10 \
+  curl --fail --silent --head --max-time 10 \
     --header "Authorization: Bearer $token" \
     --header "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json" \
-    "https://ghcr.io/v2/$repo/manifests/$tag"
+    "https://ghcr.io/v2/$repo/manifests/$ref" \
+    | tr --delete '\r' | awk 'tolower($1) == "docker-content-digest:" { print $2; found = 1 } END { exit !found }'
+}
+
+# Check that an image can be pulled without logging in; images outside
+# ghcr.io are not checked
+check_public_image() {   # check_public_image <ghcr.io/owner/name:tag>
+  [[ "$1" == ghcr.io/* ]] || return 0
+  public_image_digest "$1" >/dev/null
 }
 
 # Does a local k3d cluster with this name exist?

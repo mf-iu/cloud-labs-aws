@@ -104,7 +104,7 @@ Das Skript zeigt nacheinander die DNS-Antwort mit TTL und Resolver, die Delegati
 ```bash
 ./gateway-up.sh      # beim ersten Mal 3–5 Minuten
 curl --cacert ../.state/course-ca.crt --resolve placefinder.test:8443:127.0.0.1 \
-  "https://placefinder.test:8443/places?q=Berlin"
+  "https://placefinder.test:8443/places?q=Erfurt"
 ./gateway-down.sh
 ```
 
@@ -131,7 +131,7 @@ openssl x509 -in ../.state/course-ca.crt -noout -subject -enddate
 ```bash
 kubectl apply --filename k8s/networkpolicies.yaml
 curl --cacert ../.state/course-ca.crt --resolve placefinder.test:8443:127.0.0.1 \
-  "https://placefinder.test:8443/places?q=Berlin"          # geht weiter: über das Gateway
+  "https://placefinder.test:8443/places?q=Erfurt"          # geht weiter: über das Gateway
 kubectl run test --rm --stdin --tty --image=busybox:1.37 -- \
   wget --timeout 3 --quiet --output-document - http://placefinder   # blockiert
 kubectl delete --filename k8s/networkpolicies.yaml
