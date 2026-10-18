@@ -71,7 +71,7 @@ t01-grundlagen/check-cli.sh                # prüft CLI, Anmeldung und Region
 | 3 | [t03-container](t03-container/README.md) | Lokaler Kubernetes-Cluster mit k3d; Image in Amazon ECR, Betrieb mit ECS Express Mode (Serverless Container) | k3d, kubectl, Docker, AWS CLI |
 | 4 | [t04-netzwerk](t04-netzwerk/README.md) | VPC mit öffentlichen und privaten Subnetzen, Security Groups, Test-VMs mit Bastion-Host, Diagnose; lokal Gateway API und TLS mit cert-manager | AWS CLI, k3d, kubectl, Helm |
 | 5 | [t05-rest-api](t05-rest-api/README.md) | Neue API-Version per Digest ausrollen (Canary), Smoke-Test der REST-API, API Gateway mit Rate Limit | AWS CLI, curl |
-| 6 | [t06-datenbank](t06-datenbank/README.md) | RDS for PostgreSQL mit PostGIS, Import von cities15000, räumliche Abfragen | AWS CLI, psql |
+| 6 | [t06-datenbank](t06-datenbank/README.md) | PostGIS lokal und als RDS for PostgreSQL, Import von cities15000, räumliche Abfragen, PlaceFinder mit Datenbank, Backups | AWS CLI, psql, uv |
 | 7 | [t07-objektspeicher](t07-objektspeicher/README.md) | S3-Bucket, Pre-Signed URLs, Range Requests, CORS, Lebenszyklusregeln | AWS CLI |
 | 8 | [t08-iac](t08-iac/README.md) | Infrastruktur der Zwischenpräsentation als OpenTofu-Code, Remote State, GitHub Actions ohne Schlüssel (OIDC) | OpenTofu |
 | 9 | [t09-serverless](t09-serverless/README.md) | Täglicher GeoNames-Abgleich als Lambda-Function mit EventBridge Scheduler | OpenTofu, Python |

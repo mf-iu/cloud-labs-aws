@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Create an Amazon RDS for PostgreSQL instance (db.t4g.micro) that only
-# accepts connections from your IP address. Takes about 10 minutes.
+# Create an Amazon RDS for PostgreSQL 18 instance (db.t4g.micro) that only
+# accepts connections from your IP address. Daily backups and point-in-time
+# recovery are always on; the backups are kept for one day. Takes about
+# 10 minutes.
 # Usage: ./create-db.sh
 source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
@@ -24,11 +26,14 @@ save_state "$LAB" SECURITY_GROUP_ID "$sg"
 aws ec2 authorize-security-group-ingress --group-id "$sg" --protocol tcp --port 5432 \
   --cidr "$ip/32" >/dev/null
 
-log "Creating RDS instance $db_id (PostgreSQL, db.t4g.micro, 20 GB) ..."
+# the current minor version of PostgreSQL 18, as in compose.yaml of PlaceFinder
+version=$(aws rds describe-db-engine-versions --engine postgres --engine-version 18 \
+  --default-only --query 'DBEngineVersions[0].EngineVersion' --output text)
+log "Creating RDS instance $db_id (PostgreSQL $version, db.t4g.micro, 20 GB) ..."
 # shellcheck disable=SC2046
 aws rds create-db-instance \
   --db-instance-identifier "$db_id" \
-  --engine postgres \
+  --engine postgres --engine-version "$version" \
   --db-instance-class db.t4g.micro \
   --allocated-storage 20 --storage-type gp3 \
   --db-name placefinder \
@@ -50,6 +55,8 @@ cat <<INFO
 Database ready: $host
   Load data:   ./load-cities.sh
   Queries:     ./query.sh       (interactive: ./query.sh --interactive)
+  PlaceFinder: ./test-api.sh    (smoke test of t05 with this database)
+  Backups:     ./backups.sh
   Delete:      ./destroy-db.sh  (do not keep it running!)
 The connection string is stored in .state/$LAB.env.
 INFO

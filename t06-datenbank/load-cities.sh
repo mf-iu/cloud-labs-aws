@@ -34,4 +34,4 @@ psql_run "$DATABASE_URL" --set ON_ERROR_STOP=1 --command \
 log "Creating geography column and indexes ..."
 psql_run "$DATABASE_URL" --set ON_ERROR_STOP=1 --file indexes.sql
 
-log "Done. Try the example queries: ./query.sh"
+log "Done. Example queries: ./query.sh   PlaceFinder with this database: ./test-api.sh"
