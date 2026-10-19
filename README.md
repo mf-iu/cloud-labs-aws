@@ -72,7 +72,7 @@ t01-grundlagen/check-cli.sh                # prüft CLI, Anmeldung und Region
 | 4 | [t04-netzwerk](t04-netzwerk/README.md) | VPC mit öffentlichen und privaten Subnetzen, Security Groups, Test-VMs mit Bastion-Host, Diagnose; lokal Gateway API und TLS mit cert-manager | AWS CLI, k3d, kubectl, Helm |
 | 5 | [t05-rest-api](t05-rest-api/README.md) | Neue API-Version per Digest ausrollen (Canary), Smoke-Test der REST-API, API Gateway mit Rate Limit | AWS CLI, curl |
 | 6 | [t06-datenbank](t06-datenbank/README.md) | PostGIS lokal und als RDS for PostgreSQL, Import von cities15000, räumliche Abfragen, PlaceFinder mit Datenbank, Backups | AWS CLI, psql, uv |
-| 7 | [t07-objektspeicher](t07-objektspeicher/README.md) | S3-Bucket, Pre-Signed URLs, Range Requests, CORS, Lebenszyklusregeln | AWS CLI |
+| 7 | [t07-objektspeicher](t07-objektspeicher/README.md) | Valkey als Cache und Geo-Index, SeaweedFS lokal und S3-Bucket mit Pre-Signed URLs, Range Requests und CORS, Kartenkacheln als PMTiles, Anbieterwechsel | AWS CLI, pmtiles, uv |
 | 8 | [t08-iac](t08-iac/README.md) | Infrastruktur der Zwischenpräsentation als OpenTofu-Code, Remote State, GitHub Actions ohne Schlüssel (OIDC) | OpenTofu |
 | 9 | [t09-serverless](t09-serverless/README.md) | Täglicher GeoNames-Abgleich als Lambda-Function mit EventBridge Scheduler | OpenTofu, Python |
 | 10 | [t10-datenanalyse](t10-datenanalyse/README.md) | GeoParquet im Data Lake, Abfragen mit DuckDB und Athena, Overture Maps | OpenTofu, DuckDB |

@@ -1,9 +1,9 @@
 {
   "CORSRules": [
     {
-      "AllowedOrigins": ["*"],
+      "AllowedOrigins": ["http://localhost:5173"],
       "AllowedMethods": ["GET", "HEAD"],
-      "AllowedHeaders": ["Range", "If-None-Match"],
+      "AllowedHeaders": ["Range"],
       "ExposeHeaders": ["ETag", "Content-Length", "Content-Range"],
       "MaxAgeSeconds": 3600
     }

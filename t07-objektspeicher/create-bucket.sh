@@ -31,4 +31,4 @@ aws s3api put-bucket-lifecycle-configuration --bucket "$bucket" \
 log "Uploading GeoNames cities15000 as raw data ..."
 aws s3 cp "$(download_cities)" "s3://$bucket/raw/geonames/cities15000.txt"
 aws s3 ls --recursive --human-readable "s3://$bucket"
-log "Next: ./upload.sh <file> [key] and ./presign.sh <key>"
+log "Next: ./make-tiles.sh, ./upload.sh ../.state/data/erfurt.pmtiles, ./presign.sh tiles/erfurt.pmtiles"
