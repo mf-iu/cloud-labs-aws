@@ -1,5 +1,5 @@
-# prefix, owner, suffix, region, placefinder_image and admin_cidrs are set
-# by tools/tofu.sh from config.env
+# prefix, owner, suffix, region and placefinder_image are set by
+# tools/tofu.sh from config.env
 
 variable "prefix" {
   description = "Project prefix for all names"
@@ -27,19 +27,19 @@ variable "placefinder_image" {
 }
 
 variable "image_tag" {
-  description = "Image tag to deploy"
+  description = "Image tag to deploy first; the pipeline deploys later versions"
   type        = string
-  default     = "t07"
+  default     = "t08"
 }
 
 variable "enable_database" {
-  description = "Create the RDS PostgreSQL instance (costs money, delete it after the lab)"
+  description = "Create PostgreSQL in the database subnets (costs money, destroy it after the lab)"
   type        = bool
   default     = false
 }
 
-variable "admin_cidrs" {
-  description = "Networks that may connect to the database; tools/tofu.sh sets your IP"
-  type        = list(string)
-  default     = []
+variable "max_tasks" {
+  description = "Upper limit for the number of PlaceFinder tasks"
+  type        = number
+  default     = 2
 }

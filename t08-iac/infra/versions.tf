@@ -4,15 +4,12 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 6.67"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.7"
+      version = "~> 6.69"
     }
   }
 
-  # Remote state in S3; bucket and region come from .state/backend.hcl
+  # Remote state in S3; bucket, region and key come from tools/tofu.sh
+  # (.state/backend.hcl, written by t08-iac/bootstrap-state.sh)
   backend "s3" {}
 }
 

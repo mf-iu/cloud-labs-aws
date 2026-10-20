@@ -12,7 +12,7 @@ Jeder Teilnehmer arbeitet in der ersten Kurshälfte (Termine 1–7) mit einem An
 
 ## Arbeitsumgebung: Dev Container
 
-Der Ordner `.devcontainer/` beschreibt einen Container mit allen Werkzeugen der Übungen: Python 3.12 mit uv, eine eigene Docker Engine im Container (Docker in Docker), kubectl, Helm, k3d, OpenTofu, psql, osm2pgsql, pmtiles, die GitHub CLI und die AWS CLI. `tools/check-tools.sh` zeigt die installierten Versionen.
+Der Ordner `.devcontainer/` beschreibt einen Container mit allen Werkzeugen der Übungen: Python 3.12 mit uv, eine eigene Docker Engine im Container (Docker in Docker), kubectl, Helm, k3d, OpenTofu, Trivy, Syft, cosign, psql, osm2pgsql, pmtiles, die GitHub CLI und die AWS CLI. `tools/check-tools.sh` zeigt die installierten Versionen.
 
 **Warum:** Alle Teilnehmer arbeiten mit denselben Werkzeugen in denselben Versionen. Auf dem Notebook sind nur WSL 2, Docker Engine und VS Code nötig; alles andere steckt im Container. Ein Neubau stellt jederzeit den Ausgangszustand her.
 
@@ -73,7 +73,7 @@ t01-grundlagen/check-cli.sh                # prüft CLI, Anmeldung und Region
 | 5 | [t05-rest-api](t05-rest-api/README.md) | Neue API-Version per Digest ausrollen (Canary), Smoke-Test der REST-API, API Gateway mit Rate Limit | AWS CLI, curl |
 | 6 | [t06-datenbank](t06-datenbank/README.md) | PostGIS lokal und als RDS for PostgreSQL, Import von cities15000, räumliche Abfragen, PlaceFinder mit Datenbank, Backups | AWS CLI, psql, uv |
 | 7 | [t07-objektspeicher](t07-objektspeicher/README.md) | Valkey als Cache und Geo-Index, SeaweedFS lokal und S3-Bucket mit Pre-Signed URLs, Range Requests und CORS, Kartenkacheln als PMTiles, Anbieterwechsel | AWS CLI, pmtiles, uv |
-| 8 | [t08-iac](t08-iac/README.md) | Infrastruktur der Zwischenpräsentation als OpenTofu-Code, Remote State, GitHub Actions ohne Schlüssel (OIDC) | OpenTofu |
+| 8 | [t08-iac](t08-iac/README.md) | OpenTofu lokal mit Docker; Infrastruktur der Zwischenpräsentation als Code (VPC, Bucket, ECS Express Mode, RDS im privaten Subnetz), Remote State in S3; Ausrollen aus GitHub Actions ohne Schlüssel (OIDC); Telemetrie mit OpenTelemetry | OpenTofu, GitHub Actions |
 | 9 | [t09-serverless](t09-serverless/README.md) | Täglicher GeoNames-Abgleich als Lambda-Function mit EventBridge Scheduler | OpenTofu, Python |
 | 10 | [t10-datenanalyse](t10-datenanalyse/README.md) | GeoParquet im Data Lake, Abfragen mit DuckDB und Athena, Overture Maps | OpenTofu, DuckDB |
 | 11 | [t11-ml](t11-ml/README.md) | Modell-Endpunkt `/estimate`, MLflow-Artefakte in S3 | OpenTofu |

@@ -49,31 +49,22 @@ resource "aws_iam_role" "deploy" {
   assume_role_policy = data.aws_iam_policy_document.trust.json
 }
 
-# Least privilege: push to own ECR repositories, update own services
+# Least privilege: roll out new images on the Express Mode services, nothing
+# else. The images come from ghcr.io, so no registry permissions are needed.
 data "aws_iam_policy_document" "deploy" {
   statement {
-    sid       = "EcrLogin"
-    actions   = ["ecr:GetAuthorizationToken"]
-    resources = ["*"]
-  }
-  statement {
-    sid = "EcrPush"
+    sid = "UpdateExpressService"
     actions = [
-      "ecr:BatchCheckLayerAvailability", "ecr:BatchGetImage", "ecr:CompleteLayerUpload",
-      "ecr:DescribeImages", "ecr:GetDownloadUrlForLayer", "ecr:InitiateLayerUpload",
-      "ecr:PutImage", "ecr:UploadLayerPart",
+      "ecs:DescribeExpressGatewayService", "ecs:UpdateExpressGatewayService",
+      "ecs:ListServiceDeployments", "ecs:DescribeServiceDeployments",
     ]
-    resources = ["arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/${local.name}-*"]
-  }
-  statement {
-    sid       = "UpdateExpressService"
-    actions   = ["ecs:DescribeExpressGatewayService", "ecs:UpdateExpressGatewayService"]
     resources = ["*"]
   }
+  # A new image means a new task definition with the roles of t08-iac/infra
   statement {
     sid       = "PassTaskRoles"
     actions   = ["iam:PassRole"]
-    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.name}-*"]
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.name}-t08-ecs-*"]
   }
 }
 

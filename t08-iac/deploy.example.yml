@@ -1,43 +1,83 @@
-# Example workflow for your PlaceFinder fork: copy it to
-# .github/workflows/deploy.yml. It builds the image, pushes it to ECR and
-# updates the ECS Express Mode service, without stored AWS keys.
+# Deploy workflow for your PlaceFinder fork (session 8): copy it to
+# .github/workflows/deploy.yml. It runs after a successful run of the CI
+# pipeline (ci.yml) on master, rolls out the image of that run by digest on
+# the ECS Express Mode service of t08-iac/infra and runs the smoke test of
+# session 5 against it - without stored AWS keys: the workflow exchanges its
+# OIDC token for short-lived credentials of the role from t08-iac/github-oidc.
 #
-# Repository variables (from "tofu output" of t08-iac/github-oidc and t08-iac/infra):
-#   AWS_ROLE_ARN, AWS_REGION, ECR_REPOSITORY_URL, SERVICE_ARN
+# Repository variables (Settings > Secrets and variables > Actions >
+# Variables), from "tofu output" of t08-iac/github-oidc and t08-iac/infra:
+#   AWS_ROLE_ARN, AWS_REGION, SERVICE_ARN, SERVICE_URL
 name: deploy
 
 on:
-  push:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
     branches: [master]
 
 permissions:
   contents: read
   id-token: write   # needed to request the OIDC token
 
+# one rollout at a time; a newer one waits instead of cancelling a running one
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    # only after a green pipeline for a push (pull requests push no image)
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v5
+      - name: Image of the CI run, by digest
+        # a tag can move, the digest names exactly the tested image
+        run: |
+          ref="ghcr.io/${GITHUB_REPOSITORY,,}:${{ github.event.workflow_run.head_sha }}"
+          digest=$(docker buildx imagetools inspect "$ref" --format '{{json .Manifest}}' | jq --raw-output .digest)
+          echo "IMAGE=${ref%:*}@$digest" >> "$GITHUB_ENV"
 
       - name: Get AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Log in to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build and push the image
-        run: |
-          image="${{ vars.ECR_REPOSITORY_URL }}:${GITHUB_SHA::12}"
-          docker build --tag "$image" .
-          docker push "$image"
-          echo "IMAGE=$image" >> "$GITHUB_ENV"
-
       - name: Roll out the new image
+        env:
+          SERVICE_ARN: ${{ vars.SERVICE_ARN }}
+        # Express Mode deploys as a canary: 5 % of the traffic first, then
+        # 100 %; alarms roll back automatically (about 10 minutes)
         run: |
-          aws ecs update-express-gateway-service \
-            --service-arn "${{ vars.SERVICE_ARN }}" \
-            --primary-container "{\"image\": \"$IMAGE\", \"containerPort\": 8000}"
+          latest() {
+            aws ecs list-service-deployments --cluster default --service "$SERVICE_ARN" \
+              --query 'sort_by(serviceDeployments, &createdAt)[-1].[serviceDeploymentArn, status]' \
+              --output text
+          }
+          read -r previous _ < <(latest)
+          aws ecs update-express-gateway-service --service-arn "$SERVICE_ARN" \
+            --primary-container "{\"image\": \"$IMAGE\", \"containerPort\": 8000}" >/dev/null
+          while true; do
+            read -r arn status < <(latest)
+            [[ "$arn" != "$previous" ]] || status="not started yet"
+            echo "$(date +%T) $status"
+            case "$status" in
+              SUCCESSFUL) break ;;
+              STOPPED|ROLLBACK_SUCCESSFUL|ROLLBACK_FAILED) exit 1 ;;
+            esac
+            sleep 30
+          done
+
+      - name: Check out the lab repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: mf-iu/cloud-labs-aws
+          persist-credentials: false
+
+      - name: Smoke test (session 5)
+        # the lab scripts need a config.env; the example is enough here
+        run: |
+          cp config.example.env config.env
+          t05-rest-api/smoke-test.sh "${{ vars.SERVICE_URL }}"

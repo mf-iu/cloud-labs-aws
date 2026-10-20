@@ -19,9 +19,6 @@ backend="$STATE_DIR/backend.hcl"
 # Variables shared by all OpenTofu configurations in this repository
 export TF_VAR_prefix="$PREFIX" TF_VAR_owner="$OWNER" TF_VAR_placefinder_image="$PLACEFINDER_IMAGE" TF_VAR_suffix
 TF_VAR_suffix="$(suffix)"
-# Your current IP address for firewall rules (e.g. database access)
-export TF_VAR_admin_cidrs
-TF_VAR_admin_cidrs="[\"$(my_ip)/32\"]"
 tofu_provider_vars   # provider specific variables, see lib/provider.sh
 
 # One state file per directory, e.g. t08-iac/infra/terraform.tfstate

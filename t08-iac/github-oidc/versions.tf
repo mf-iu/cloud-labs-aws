@@ -4,11 +4,11 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 6.67"
+      version = "~> 6.69"
     }
   }
 
-  # Remote state in S3; bucket and region come from .state/backend.hcl
+  # Remote state in S3, a state of its own next to t08-iac/infra
   backend "s3" {}
 }
 

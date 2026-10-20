@@ -29,4 +29,4 @@ region       = "$AWS_REGION"
 encrypt      = true
 use_lockfile = true
 HCL
-log "Wrote $STATE_DIR/backend.hcl. Next: ../tools/tofu.sh infra plan"
+log "Wrote $STATE_DIR/backend.hcl. Next, in the repository root: tools/tofu.sh t08-iac/infra plan"

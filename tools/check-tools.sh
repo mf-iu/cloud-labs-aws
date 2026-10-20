@@ -49,6 +49,8 @@ check ssh       -    ssh -V
 check shellcheck -   shellcheck --version
 check docker    -    docker --version
 check trivy     -    trivy --version
+check syft      -    syft version
+check cosign    -    cosign version
 check kubectl   -    kubectl version --client
 check helm      -    helm version --short
 check k3d       -    k3d version

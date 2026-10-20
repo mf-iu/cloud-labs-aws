@@ -34,7 +34,7 @@ t09-serverless/invoke.sh 2026-10-01      # bestimmter Tag
 aws s3 ls --recursive s3://$(tools/tofu.sh t09-serverless/infra output -raw bucket)
 ```
 
-Mit Datenbank (z. B. aus Termin 6 oder `t08-iac` mit `enable_database=true`):
+Mit Datenbank (z. B. aus Termin 6; die Datenbank aus `t08-iac` liegt im privaten Netz und ist von außen nicht erreichbar):
 
 ```bash
 tools/tofu.sh t09-serverless/infra apply -var "database_url=postgresql://…?sslmode=require"

@@ -12,6 +12,12 @@ ARG PMTILES_VERSION=1.31.2
 ARG TRIVY_VERSION=0.74.0
 ARG TRIVY_SHA256_AMD64=2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be4371a
 ARG TRIVY_SHA256_ARM64=b94ce1976bbf3c15b514b605ee88be7c6d94a29be2302847ff01cb794d47aad5
+ARG SYFT_VERSION=1.54.0
+ARG SYFT_SHA256_AMD64=54a87372498168b2d033e876fd41fa4e8035b872699e525a57046e1f2f09c860
+ARG SYFT_SHA256_ARM64=ee6d4566373a05b344bc6b5f1706f14419bf9338ba39ff686e247deefe9b8818
+ARG COSIGN_VERSION=3.1.3
+ARG COSIGN_SHA256_AMD64=4629c757b7618056f8ddd7e2625ae9fdd94c0372a65049520bc7d9df9efc7f71
+ARG COSIGN_SHA256_ARM64=c5d324e091826b0d7a78eb16fef316450b4eb9aaec045611c08ba06f5e73220a
 
 # Ubuntu packages: Python 3.12, network diagnosis (T04), OpenStreetMap tools (T06),
 # shell tools
@@ -64,6 +70,24 @@ RUN case "$(dpkg --print-architecture)" in \
  && echo "$sum  /tmp/trivy.tar.gz" | sha256sum --check - \
  && tar --extract --gzip --file /tmp/trivy.tar.gz --directory /usr/local/bin trivy \
  && rm /tmp/trivy.tar.gz
+
+# Syft lists the packages of an image (SBOM), cosign signs and verifies
+# images (T02, T08). Pinned versions with checksums, like Trivy.
+RUN arch="$(dpkg --print-architecture)" \
+ && case "$arch" in \
+      amd64) syft_sum="$SYFT_SHA256_AMD64"; cosign_sum="$COSIGN_SHA256_AMD64" ;; \
+      arm64) syft_sum="$SYFT_SHA256_ARM64"; cosign_sum="$COSIGN_SHA256_ARM64" ;; \
+      *) echo "unsupported architecture" >&2; exit 1 ;; \
+    esac \
+ && curl --fail --silent --show-error --location --output /tmp/syft.tar.gz \
+      "https://github.com/anchore/syft/releases/download/v${SYFT_VERSION}/syft_${SYFT_VERSION}_linux_${arch}.tar.gz" \
+ && echo "$syft_sum  /tmp/syft.tar.gz" | sha256sum --check - \
+ && tar --extract --gzip --file /tmp/syft.tar.gz --directory /usr/local/bin syft \
+ && curl --fail --silent --show-error --location --output /usr/local/bin/cosign \
+      "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-${arch}" \
+ && echo "$cosign_sum  /usr/local/bin/cosign" | sha256sum --check - \
+ && chmod 755 /usr/local/bin/cosign \
+ && rm /tmp/syft.tar.gz
 
 # Mount points for the AWS login and the SSH keys of WSL (see devcontainer.json),
 # owned by the container user, so that Docker does not create them as root

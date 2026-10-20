@@ -1,7 +1,8 @@
-# Network from lab t04: public, application and database subnets in two zones
-
+# The network design of session 4: VPC 10.20.0.0/16 with public, application
+# and database subnets in two availability zones (t04-netzwerk/create-vpc.sh).
 locals {
   name = "${var.prefix}-${var.owner}"
+
   subnets = {
     public-a = { cidr = "10.20.0.0/24", zone = 0, tier = "public" }
     public-b = { cidr = "10.20.1.0/24", zone = 1, tier = "public" }
@@ -9,6 +10,11 @@ locals {
     app-b    = { cidr = "10.20.11.0/24", zone = 1, tier = "app" }
     db-a     = { cidr = "10.20.20.0/24", zone = 0, tier = "db" }
     db-b     = { cidr = "10.20.21.0/24", zone = 1, tier = "db" }
+  }
+  # subnet ids by tier, e.g. local.subnet_ids["db"]
+  subnet_ids = {
+    for tier in ["public", "app", "db"] :
+    tier => [for key, s in local.subnets : aws_subnet.this[key].id if s.tier == tier]
   }
 }
 
@@ -18,6 +24,7 @@ data "aws_availability_zones" "available" {
 
 resource "aws_vpc" "main" {
   cidr_block           = "10.20.0.0/16"
+  enable_dns_support   = true
   enable_dns_hostnames = true
   tags                 = { Name = "${local.name}-vpc" }
 }
@@ -46,7 +53,9 @@ resource "aws_route_table" "public" {
   }
 }
 
-# Application and database subnets only have the implicit local route
+# Application and database subnets only have the implicit route within the
+# VPC: nothing in them is reachable from the internet, and without a NAT
+# gateway (about 1 USD per day) nothing in them reaches the internet either
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
   tags   = { Name = "${local.name}-rt-private" }
