@@ -8,7 +8,7 @@ Zwei Teile: In der Übung läuft PlaceFinder in einem lokalen Kubernetes-Cluster
 
 | Skript | Aufgabe |
 |---|---|
-| `cluster-up.sh` | Cluster `pf` anlegen (1 Server, 2 Agents, k3s 1.36) oder wieder starten |
+| `cluster-up.sh` | Cluster `pf` anlegen (1 Server, 2 Agents, k3s 1.36, nur mit den nötigen Diensten) oder wieder starten |
 | `build-image.sh` | Image `placefinder:<version>` aus `../placefinder` bauen und in die Nodes laden; mit `--push` zusätzlich als `:<version>` und `:t03` nach ghcr.io (Teil 2; `--tag t05` für den Stand von Termin 5) |
 | `cluster-down.sh` | Cluster löschen; die Images bleiben in Docker |
 
@@ -29,6 +29,7 @@ Wie es weitergeht – neue Version ausrollen, Konfiguration ändern, Helm-Chart,
 - `ErrImagePull` oder `ImagePullBackOff`: Das Image ist nicht in den Nodes. `./build-image.sh` nach `./cluster-up.sh` ausführen; Tag im Manifest und Version müssen übereinstimmen.
 - Pods bleiben `Pending`: zu wenig Speicher, `kubectl describe pod <name>` zeigt den Grund.
 - Nach einem Neubau des Dev Containers kennt `kubectl` den Cluster nicht mehr: `./cluster-up.sh` startet ihn und trägt ihn wieder ein.
+- `kubectl get pods --all-namespaces` zeigt nur `coredns`, `metrics-server` und `local-path-provisioner` in `kube-system`, kein `traefik` oder `svclb-…`: So ist es gewollt. `cluster-up.sh` schaltet Traefik, ServiceLB, den Helm-Controller, den NetworkPolicy-Controller und den Load Balancer von k3d ab, weil die Übung sie nicht braucht; Zugang von außen folgt in [t04-netzwerk](../t04-netzwerk/README.md). Ein früher angelegter Cluster behält sie, bis er mit `./cluster-down.sh` und `./cluster-up.sh` neu entsteht.
 
 Aufräumen nach der Selbstlernphase: `./cluster-down.sh`.
 
