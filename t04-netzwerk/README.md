@@ -1,20 +1,20 @@
 # T04 – Netze: VPC bei AWS, Diagnose, Gateway API lokal
 
-Die Selbstlernphase von Termin 4 hat drei Teile: Der Netzentwurf aus der Übung wird als VPC bei AWS angelegt und mit zwei Test-VMs geprüft (Aufgabe 1), `diagnose.sh` zeigt den Weg einer HTTPS-Anfrage (Aufgabe 2), und die Demo mit Gateway API und cert-manager läuft im lokalen k3d-Cluster (Aufgaben 3 und 4).
+Die Übung von Termin 4 läuft im Termin: Nach dem Entwurf auf Papier wird das Netz als VPC bei AWS angelegt, mit dem Entwurf verglichen und wieder gelöscht (ca. 45 Minuten). Alles Weitere ist **Zusatz** – freiwillig und ohne Folgen für spätere Termine: Test-VMs und NAT-Gateway, Diagnose einer HTTPS-Anfrage und die Demo mit Gateway API und cert-manager im lokalen k3d-Cluster.
 
 | Skript | Aufgabe |
 |---|---|
 | `create-vpc.sh` | VPC mit Subnetzen, Routing-Tabellen und Security Groups anlegen; optional Test-VMs und NAT-Gateway |
-| `check-vpc.sh` | Test-VMs prüfen: Was ist von wo erreichbar? |
+| `check-vpc.sh` | Netz mit dem Entwurf vergleichen; mit Test-VMs auch: Was ist von wo erreichbar? |
 | `destroy-vpc.sh` | alles wieder löschen |
 | `diagnose.sh` | DNS, TCP, TLS und Zertifikat eines Hosts anzeigen |
 | `gateway-up.sh`, `gateway-down.sh` | lokaler Cluster mit Gateway API, cert-manager und PlaceFinder über HTTPS (Dateien in `k8s/`) |
 
-## Teil 1: VPC mit öffentlichen und privaten Subnetzen
+## Im Termin: Netz anlegen, prüfen, löschen
 
 **Ziel:** eine VPC `10.20.0.0/16` mit je zwei öffentlichen, Anwendungs- und Datenbank-Subnetzen in zwei Availability Zones, passenden Routing-Tabellen und Security Groups, die aufeinander verweisen.
 
-**Kosten:** VPC, Subnetze, Routing-Tabellen und Security Groups sind kostenlos. Die beiden optionalen Test-VMs (`t3.micro`) kosten zusammen ca. 0,03 USD pro Stunde einschließlich der öffentlichen IPv4-Adresse, das optionale **NAT-Gateway ca. 0,05 USD pro Stunde plus Datenmenge** – am selben Tag wieder löschen.
+**Kosten:** VPC, Subnetze, Routing-Tabellen und Security Groups sind kostenlos; ohne die Optionen `--with-vm` und `--with-nat` entsteht nichts, was Geld kostet.
 
 ### Aufbau
 
@@ -32,17 +32,13 @@ Die Selbstlernphase von Termin 4 hat drei Teile: Der Netzentwurf aus der Übung 
 | sg-ssh (mit `--with-vm`) | 22 nur von der eigenen IP-Adresse – für den Bastion-Host |
 | sg-ssh-from-bastion (mit `--with-vm`) | 22 nur von sg-ssh – für die private VM |
 
-### Schritte
+### Anlegen
 
 ```bash
-./create-vpc.sh                      # nur das Netz
-./create-vpc.sh --with-vm            # zusätzlich zwei Test-VMs
-./create-vpc.sh --with-vm --with-nat # zusätzlich NAT-Gateway (kostet!)
+./create-vpc.sh
 ```
 
-Mit `--with-vm` entstehen zwei VMs: ein **Bastion-Host** in `public-a` mit öffentlicher Adresse und eine **private VM** in `app-a` ohne öffentliche Adresse. Die private VM ist nur über den Bastion-Host erreichbar (SSH-Sprung mit `-J`). Am Ende zeigt das Skript alle Subnetze mit der Zahl der freien Adressen – AWS reserviert in jedem Subnetz fünf Adressen, ein `/24` hat also 251 nutzbare.
-
-Ein Bastion-Host ist das klassische Muster für den Zugang zu privaten Subnetzen. In Produktion ersetzt man ihn besser durch den AWS Systems Manager Session Manager: kein offener Port 22, Anmeldung über IAM, jede Sitzung protokolliert.
+Das Skript läuft ein bis zwei Minuten und zeigt am Ende eine Übersicht der Subnetze.
 
 ### Prüfen
 
@@ -50,7 +46,59 @@ Ein Bastion-Host ist das klassische Muster für den Zugang zu privaten Subnetzen
 ./check-vpc.sh
 ```
 
-Das Skript meldet sich am Bastion-Host an, springt von dort auf die private VM und prüft vier Erwartungen aus dem Netzentwurf:
+Das Skript vergleicht das angelegte Netz mit dem Entwurf und markiert Abweichungen mit `UNEXPECTED`:
+
+| Prüfung | Erwartung |
+|---|---|
+| Adressbereich je Subnetz | wie im Entwurf, z. B. `app-a` = `10.20.10.0/24` |
+| Route `0.0.0.0/0` je Subnetz | `public-*`: Internet-Gateway, `app-*` und `db-*`: keine (mit `--with-nat`: `app-*` zum NAT-Gateway) |
+| eingehende Regeln je Security Group | `sg-lb`: 443 von `0.0.0.0/0`, `sg-app`: 8000 von `sg-lb`, `sg-db`: 5432 von `sg-app` |
+
+Danach zeigt es alle Subnetze mit der Zahl der freien Adressen – AWS reserviert in jedem Subnetz fünf Adressen, ein `/24` hat also 251 nutzbare.
+
+Zum Ausprobieren: in der Konsole des Anbieters eine Regel ändern, etwa die Datenbank aus dem ganzen Internet erlauben, und `./check-vpc.sh` erneut aufrufen. Danach die Änderung zurücknehmen.
+
+Von Hand:
+
+```bash
+aws ec2 describe-route-tables --filters Name=vpc-id,Values=<vpc-id> --output table
+aws ec2 describe-security-groups --filters Name=vpc-id,Values=<vpc-id> \
+  --query 'SecurityGroups[].[GroupName,IpPermissions[0].FromPort,IpPermissions[0].UserIdGroupPairs[0].GroupId]' --output table
+```
+
+### Aufräumen – gehört zur Übung
+
+```bash
+./destroy-vpc.sh
+../tools/find-leftovers.sh
+```
+
+`destroy-vpc.sh` löscht in umgekehrter Reihenfolge: VMs, NAT-Gateway, Elastic IP, Security Groups, Routing-Tabellen, Subnetze, Internet-Gateway, VPC. Erst wenn beide Befehle durchgelaufen sind, ist die Übung fertig.
+
+### Fragen zum Weiterdenken
+
+- Was macht ein Subnetz bei AWS „öffentlich“? Was fehlt der privaten VM in `app-a`, um Updates aus dem Internet zu laden?
+- Warum verweisen die Security Groups aufeinander statt auf Adressbereiche?
+- Wozu sind die Datenbank-Subnetze in zwei Zonen nötig, auch wenn die Datenbank nur in einer läuft?
+- Was kostet das NAT-Gateway im Monat, wenn man es vergisst? Welche günstigeren Wege gibt es zu S3 (Gateway-Endpunkt)?
+
+## Zusatz 1: Test-VMs und NAT-Gateway
+
+**Kosten:** Die beiden Test-VMs (`t3.micro`) kosten zusammen ca. 0,03 USD pro Stunde einschließlich der öffentlichen IPv4-Adresse, das **NAT-Gateway ca. 0,05 USD pro Stunde plus Datenmenge**. Am selben Tag wieder löschen.
+
+Die Optionen gelten nur beim Anlegen; ein bestehendes Netz erst mit `./destroy-vpc.sh` löschen.
+
+```bash
+./create-vpc.sh --with-vm            # zusätzlich zwei Test-VMs
+./create-vpc.sh --with-vm --with-nat # zusätzlich NAT-Gateway (kostet!)
+./check-vpc.sh
+```
+
+Mit `--with-vm` entstehen zwei VMs: ein **Bastion-Host** in `public-a` mit öffentlicher Adresse und eine **private VM** in `app-a` ohne öffentliche Adresse. Die private VM ist nur über den Bastion-Host erreichbar (SSH-Sprung mit `-J`).
+
+Ein Bastion-Host ist das klassische Muster für den Zugang zu privaten Subnetzen. In Produktion ersetzt man ihn besser durch den AWS Systems Manager Session Manager: kein offener Port 22, Anmeldung über IAM, jede Sitzung protokolliert.
+
+Mit Test-VMs meldet sich `check-vpc.sh` zusätzlich am Bastion-Host an, springt von dort auf die private VM und prüft vier Erwartungen an die Erreichbarkeit:
 
 | Prüfung | ohne `--with-nat` | mit `--with-nat` |
 |---|---|---|
@@ -66,29 +114,13 @@ Von Hand:
 ```bash
 ssh ubuntu@<bastion-ip>
 ssh -J ubuntu@<bastion-ip> ubuntu@<private-ip>
-aws ec2 describe-route-tables --filters Name=vpc-id,Values=<vpc-id> --output table
-aws ec2 describe-security-groups --filters Name=vpc-id,Values=<vpc-id> \
-  --query 'SecurityGroups[].[GroupName,IpPermissions[0].FromPort,IpPermissions[0].UserIdGroupPairs[0].GroupId]' --output table
 ```
 
 Die Adressen stehen in der Ausgabe von `create-vpc.sh` und in `../.state/t04.env`. Wechselt die eigene IP-Adresse (anderes WLAN), lässt sg-ssh keine Verbindung mehr zu – dann `./destroy-vpc.sh` und neu anlegen.
 
-### Aufräumen
+Danach aufräumen wie oben: `./destroy-vpc.sh`.
 
-```bash
-./destroy-vpc.sh
-```
-
-Das Skript löscht in umgekehrter Reihenfolge: VMs, NAT-Gateway, Elastic IP, Security Groups, Routing-Tabellen, Subnetze, Internet-Gateway, VPC.
-
-### Fragen zum Weiterdenken
-
-- Was macht ein Subnetz bei AWS „öffentlich“? Was fehlt der privaten VM in `app-a`, um Updates aus dem Internet zu laden?
-- Warum verweisen die Security Groups aufeinander statt auf Adressbereiche?
-- Wozu sind die Datenbank-Subnetze in zwei Zonen nötig, auch wenn die Datenbank nur in einer läuft?
-- Was kostet das NAT-Gateway im Monat, wenn man es vergisst? Welche günstigeren Wege gibt es zu S3 (Gateway-Endpunkt)?
-
-## Teil 2: Diagnose
+## Zusatz 2: Diagnose
 
 ```bash
 ./diagnose.sh                          # www.openstreetmap.org
@@ -97,7 +129,7 @@ Das Skript löscht in umgekehrter Reihenfolge: VMs, NAT-Gateway, Elastic IP, Sec
 
 Das Skript zeigt nacheinander die DNS-Antwort mit TTL und Resolver, die Delegation ab der Root-Zone (`dig +trace`), Verbindungsaufbau und TLS-Handshake (`curl --verbose`), die Zeit bis zu jedem Schritt (`curl --write-out`) und die Zertifikatskette (`openssl s_client`). Blockiert das Netz DNS-Anfragen an andere Server als den eigenen Resolver (manche Firmen- und Hochschulnetze), bleibt der Abschnitt `dig +trace` leer.
 
-## Teil 3: Gateway API und TLS lokal
+## Zusatz 3: Gateway API und TLS lokal
 
 **Kosten:** keine – alles läuft im Dev Container. Der Cluster `net` hat einen Node und braucht mit allen Pods rund 1,5 GB Arbeitsspeicher; läuft der Cluster `pf` aus Termin 3 noch, ihn bei Bedarf mit `k3d cluster stop pf` anhalten.
 
@@ -126,7 +158,7 @@ kubectl describe certificate pf-tls       # ausgestellt von course-ca, Laufzeit,
 openssl x509 -in ../.state/course-ca.crt -noout -subject -enddate
 ```
 
-**NetworkPolicies (Aufgabe 4):**
+**NetworkPolicies:**
 
 ```bash
 kubectl apply --filename k8s/networkpolicies.yaml
