@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Invoke the function manually and show the result.
 # Usage: ./invoke.sh [YYYY-MM-DD]   (default: yesterday)
-source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
 
 check_login

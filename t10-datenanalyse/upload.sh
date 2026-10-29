@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Convert cities15000 into GeoParquet and upload it into the data lake.
 # Usage: ./upload.sh
-source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
 
 require uv

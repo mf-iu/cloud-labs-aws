@@ -1,0 +1,82 @@
+# Deploy workflow for your PlaceFinder fork (session 8): copy it to
+# .github/workflows/deploy.yml. It runs after a successful run of the CI
+# pipeline (ci.yml) on master, rolls out the image of that run by digest on
+# the ECS Express Mode service of 06-infrastructure-as-code/service and runs
+# the smoke test of cloud-labs-local against it - without stored AWS keys:
+# the workflow exchanges its OIDC token for short-lived credentials of the
+# role from 06-infrastructure-as-code/github-oidc.
+#
+# Repository variables (Settings > Secrets and variables > Actions >
+# Variables), from "tofu output" of github-oidc and service:
+#   AWS_ROLE_ARN, AWS_REGION, SERVICE_ARN, SERVICE_URL
+#   AWS_ROLE_ARN, AWS_REGION, SERVICE_ARN, SERVICE_URL
+name: deploy
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [master]
+
+permissions:
+  contents: read
+  id-token: write   # needed to request the OIDC token
+
+# one rollout at a time; a newer one waits instead of cancelling a running one
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # only after a green pipeline for a push (pull requests push no image)
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Image of the CI run, by digest
+        # a tag can move, the digest names exactly the tested image
+        run: |
+          ref="ghcr.io/${GITHUB_REPOSITORY,,}:${{ github.event.workflow_run.head_sha }}"
+          digest=$(docker buildx imagetools inspect "$ref" --format '{{json .Manifest}}' | jq --raw-output .digest)
+          echo "IMAGE=${ref%:*}@$digest" >> "$GITHUB_ENV"
+
+      - name: Get AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Roll out the new image
+        env:
+          SERVICE_ARN: ${{ vars.SERVICE_ARN }}
+        # Express Mode deploys as a canary: 5 % of the traffic first, then
+        # 100 %; alarms roll back automatically (about 10 minutes)
+        run: |
+          latest() {
+            aws ecs list-service-deployments --cluster default --service "$SERVICE_ARN" \
+              --query 'sort_by(serviceDeployments, &createdAt)[-1].[serviceDeploymentArn, status]' \
+              --output text
+          }
+          read -r previous _ < <(latest)
+          aws ecs update-express-gateway-service --service-arn "$SERVICE_ARN" \
+            --primary-container "{\"image\": \"$IMAGE\", \"containerPort\": 8000}" >/dev/null
+          while true; do
+            read -r arn status < <(latest)
+            [[ "$arn" != "$previous" ]] || status="not started yet"
+            echo "$(date +%T) $status"
+            case "$status" in
+              SUCCESSFUL) break ;;
+              STOPPED|ROLLBACK_SUCCESSFUL|ROLLBACK_FAILED) exit 1 ;;
+            esac
+            sleep 30
+          done
+
+      - name: Check out the local labs, which contain the smoke test
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: mf-iu/cloud-labs-local
+          persist-credentials: false
+
+      - name: Smoke test (session 5)
+        run: tools/smoke-test.sh "${{ vars.SERVICE_URL }}"

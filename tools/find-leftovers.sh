@@ -2,7 +2,6 @@
 # List course resources that still exist, and everything that costs money
 # by the hour even without the course tag. Deletes nothing.
 # Usage: tools/find-leftovers.sh
-source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
 
 check_login

@@ -2,7 +2,6 @@
 # Upload a trained model (e.g. exported from MLflow) to the model location
 # that the /estimate endpoint reads at start-up.
 # Usage: ./upload-model.sh <model.joblib>
-source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
 
 check_login

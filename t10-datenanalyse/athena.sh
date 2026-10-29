@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Run an SQL query with Amazon Athena on the GeoParquet file in S3.
 # Usage: ./athena.sh ["SQL"]   (default: largest places per country)
-source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
 
 check_login

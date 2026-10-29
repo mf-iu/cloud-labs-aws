@@ -1,12 +1,17 @@
 // Dev container for the AWS labs of the cloud computing course.
-// Open this folder from WSL in VS Code and choose "Reopen in Container".
-// The first start builds the image and takes several minutes.
+// It builds the Dockerfile of cloud-labs-local, which must be cloned next to
+// this repository (see cloud-labs-local/00-setup), and adds the CLI of
+// AWS. Open this folder from WSL in VS Code and choose "Reopen in
+// Container". The first start builds the image and takes several minutes.
 {
   "name": "Cloud-Kurs: AWS",
-  "build": { "dockerfile": "Dockerfile" },
+  "build": {
+    "dockerfile": "../../cloud-labs-local/.devcontainer/Dockerfile",
+    "context": "../../cloud-labs-local/.devcontainer"
+  },
 
-  // The parent folder is mounted, so that PlaceFinder and the other
-  // repositories next to this one are available in the container, too.
+  // The parent folder is mounted, so that cloud-labs-local, PlaceFinder and
+  // the other repositories next to this one are available in the container.
   "workspaceMount": "source=${localWorkspaceFolder}/..,target=/workspaces,type=bind",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 
@@ -27,15 +32,14 @@
 
   "remoteUser": "vscode",
   "containerEnv": {
-    "COURSE_PROVIDER": "aws",
     // The uv cache and the projects are on different file systems
     "UV_LINK_MODE": "copy"
   },
   "forwardPorts": [8000],
   "portsAttributes": { "8000": { "label": "PlaceFinder" } },
 
-  // Shows the versions of all tools; run it again at any time
-  "postCreateCommand": "tools/check-tools.sh",
+  // Shows the versions of all tools; run both again at any time
+  "postCreateCommand": "../cloud-labs-local/tools/check-tools.sh; 01-account/check-cli.sh --tools-only",
 
   "customizations": {
     "vscode": {

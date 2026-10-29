@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Run query_duckdb.py with temporary credentials of your AWS login.
 # Usage: ./query-duckdb.sh [overture release]
-source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
 
 require uv
