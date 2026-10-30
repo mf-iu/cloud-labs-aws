@@ -1,0 +1,2 @@
+# Formatting and lint rules for the Python files, as in PlaceFinder
+line-length = 100

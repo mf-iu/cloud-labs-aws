@@ -1,55 +1,89 @@
 #!/usr/bin/env bash
+
 # Create an EC2 VM that installs and runs PlaceFinder via cloud-init.
+#
 # Usage: ./create-vm.sh [git ref]   (default ref: t01)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 require_github_user   # PLACEFINDER_IMAGE and PLACEFINDER_REPO need it
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 LAB=t02
 ref="${1:-t01}"
+# Another size without changing the script: VM_TYPE=t3.small ./create-vm.sh
 instance_type="${VM_TYPE:-t3.micro}"
 check_login
 check_repo_ref "$PLACEFINDER_REPO" "$ref"
 load_state "$LAB"
+# A saved id means the VM exists already
 [[ -z "${INSTANCE_ID:-}" ]] || die "VM $INSTANCE_ID already exists. Run ./destroy-vm.sh first."
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 ip=$(my_ip)
 vpc=$(default_vpc)
 key=$(ensure_key_pair "$LAB")
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 log "Creating security group (SSH and port 8000 from $ip only) ..."
 sg_name=$(name "$LAB-vm")
+# --query GroupId --output text: print only the id of the new group
 sg=$(aws ec2 create-security-group --group-name "$sg_name" --vpc-id "$vpc" \
-  --description "PlaceFinder VM, lab $LAB" \
-  --tag-specifications "$(tag_spec security-group "$LAB" "$sg_name")" \
-  --query GroupId --output text)
+    --description "PlaceFinder VM, lab $LAB" \
+    --tag-specifications "$(tag_spec security-group "$LAB" "$sg_name")" \
+    --query GroupId --output text)
 save_state "$LAB" SECURITY_GROUP_ID "$sg"
+# Two rules: SSH (22) and the API (8000), each only from your own address (/32
+# means exactly one address)
 aws ec2 authorize-security-group-ingress --group-id "$sg" --ip-permissions \
-  "IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges=[{CidrIp=$ip/32,Description=ssh-from-my-ip}]" \
-  "IpProtocol=tcp,FromPort=8000,ToPort=8000,IpRanges=[{CidrIp=$ip/32,Description=api-from-my-ip}]" \
-  >/dev/null
+    "IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges=[{CidrIp=$ip/32,Description=ssh-from-my-ip}]" \
+    "IpProtocol=tcp,FromPort=8000,ToPort=8000,IpRanges=[{CidrIp=$ip/32,Description=api-from-my-ip}]" \
+    >/dev/null
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# A temporary file for the start script of the VM; trap deletes it when this
+# script ends
 user_data=$(mktemp)
 trap 'rm --force "$user_data"' EXIT
+# Fill repository and ref into cloud-init.yaml; > writes the result into the
+# file
 render "$(dirname "$0")/cloud-init.yaml" "REPO=$PLACEFINDER_REPO" "REF=$ref" >"$user_data"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 vm_name=$(name "$LAB-vm")
 log "Starting $instance_type with Ubuntu 24.04 ..."
+# HttpTokens=required: the metadata service answers only with a token (IMDSv2).
+# The disk is deleted together with the instance.
 instance=$(aws ec2 run-instances \
-  --image-id "$(ubuntu_ami amd64)" \
-  --instance-type "$instance_type" \
-  --key-name "$key" \
-  --security-group-ids "$sg" \
-  --user-data "file://$user_data" \
-  --metadata-options HttpTokens=required \
-  --block-device-mappings 'DeviceName=/dev/sda1,Ebs={VolumeSize=10,VolumeType=gp3,DeleteOnTermination=true}' \
-  --tag-specifications "$(tag_spec instance "$LAB" "$vm_name")" "$(tag_spec volume "$LAB" "$vm_name")" \
-  --query 'Instances[0].InstanceId' --output text)
+    --image-id "$(ubuntu_ami amd64)" \
+    --instance-type "$instance_type" \
+    --key-name "$key" \
+    --security-group-ids "$sg" \
+    --user-data "file://$user_data" \
+    --metadata-options HttpTokens=required \
+    --block-device-mappings 'DeviceName=/dev/sda1,Ebs={VolumeSize=10,VolumeType=gp3,DeleteOnTermination=true}' \
+    --tag-specifications "$(tag_spec instance "$LAB" "$vm_name")" "$(tag_spec volume "$LAB" "$vm_name")" \
+    --query 'Instances[0].InstanceId' --output text)
 save_state "$LAB" INSTANCE_ID "$instance"
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# wait polls until the instance runs; only then does it have a public address
 aws ec2 wait instance-running --instance-ids "$instance"
 public_ip=$(aws ec2 describe-instances --instance-ids "$instance" \
-  --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+    --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
 save_state "$LAB" PUBLIC_IP "$public_ip"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 cat <<INFO
 

@@ -6,6 +6,8 @@ resource "aws_s3_bucket" "data" {
   force_destroy = true # lab only: "tofu destroy" deletes the objects as well
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # New buckets block public access and encrypt with SSE-S3 anyway; written
 # down here, the settings are visible and protected against drift
 resource "aws_s3_bucket_public_access_block" "data" {
@@ -15,6 +17,8 @@ resource "aws_s3_bucket_public_access_block" "data" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_s3_bucket_cors_configuration" "data" {
   bucket = aws_s3_bucket.data.id
@@ -27,6 +31,8 @@ resource "aws_s3_bucket_cors_configuration" "data" {
     max_age_seconds = 3600
   }
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_s3_bucket_lifecycle_configuration" "data" {
   bucket = aws_s3_bucket.data.id

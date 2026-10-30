@@ -30,23 +30,48 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 BASE_URL = "https://download.geonames.org/export/dump"
 USER_AGENT = "PlaceFinder-course/1.0 (cloud computing course)"
 MIN_POPULATION = int(os.environ.get("MIN_POPULATION", "15000"))
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # Column order of the GeoNames dump files and of the table "places"
 COLUMNS = [
-    "geonameid", "name", "asciiname", "alternatenames", "latitude", "longitude",
-    "feature_class", "feature_code", "country_code", "cc2", "admin1_code",
-    "admin2_code", "admin3_code", "admin4_code", "population", "elevation",
-    "dem", "timezone", "modification_date",
+    "geonameid",
+    "name",
+    "asciiname",
+    "alternatenames",
+    "latitude",
+    "longitude",
+    "feature_class",
+    "feature_code",
+    "country_code",
+    "cc2",
+    "admin1_code",
+    "admin2_code",
+    "admin3_code",
+    "admin4_code",
+    "population",
+    "elevation",
+    "dem",
+    "timezone",
+    "modification_date",
 ]
 INT_COLUMNS = {"geonameid", "population", "elevation", "dem"}
 FLOAT_COLUMNS = {"latitude", "longitude"}
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 Store = Callable[[str, bytes], None]
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 log = logging.getLogger("geonames_sync")
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 @dataclass
@@ -59,11 +84,12 @@ class ChangeSet:
     skipped: int = 0
 
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
 def fetch_text(file_name: str) -> str:
     """Download one file from the GeoNames dump directory."""
-    request = urllib.request.Request(
-        f"{BASE_URL}/{file_name}", headers={"User-Agent": USER_AGENT}
-    )
+    request = urllib.request.Request(f"{BASE_URL}/{file_name}", headers={"User-Agent": USER_AGENT})
     try:
         with urllib.request.urlopen(request, timeout=60) as response:
             return response.read().decode("utf-8")
@@ -73,10 +99,16 @@ def fetch_text(file_name: str) -> str:
         raise
 
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
 def is_relevant(row: list[str]) -> bool:
     """Keep populated places (feature class P) of the cities15000 subset."""
     population = int(row[14] or 0)
     return row[6] == "P" and population >= MIN_POPULATION
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 def load_changes(day: dt.date) -> ChangeSet:
@@ -97,8 +129,14 @@ def load_changes(day: dt.date) -> ChangeSet:
     return changes
 
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
 def to_tsv(rows: list[list[str]]) -> bytes:
     return "".join("\t".join(row) + "\n" for row in rows).encode("utf-8")
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 def summary(changes: ChangeSet, applied: bool) -> dict:
@@ -111,6 +149,9 @@ def summary(changes: ChangeSet, applied: bool) -> dict:
     }
 
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
 def convert(column: str, value: str) -> object:
     """Convert a field of the dump file to the type of the table column."""
     if value == "":
@@ -120,6 +161,9 @@ def convert(column: str, value: str) -> object:
     if column in FLOAT_COLUMNS:
         return float(value)
     return value
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 def connect(database_url: str):
@@ -141,6 +185,9 @@ def connect(database_url: str):
         database=(url.path or "/postgres").lstrip("/"),
         ssl_context=ssl_context,
     )
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 def apply_to_database(changes: ChangeSet, database_url: str) -> None:
@@ -169,6 +216,9 @@ def apply_to_database(changes: ChangeSet, database_url: str) -> None:
         con.close()
 
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
 def run(store: Store, day: dt.date | None = None) -> dict:
     """Process the changes of one day (default: yesterday, UTC)."""
     day = day or dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=1)
@@ -186,8 +236,14 @@ def run(store: Store, day: dt.date | None = None) -> dict:
     return result
 
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
 def parse_day(value: str | None) -> dt.date | None:
     return dt.date.fromisoformat(value) if value else None
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 def main() -> None:
@@ -205,6 +261,8 @@ def main() -> None:
 
     print(json.dumps(run(store_local, parse_day(args.date)), indent=2))
 
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 if __name__ == "__main__":
     main()

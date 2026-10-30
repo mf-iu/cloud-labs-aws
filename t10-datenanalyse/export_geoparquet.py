@@ -16,15 +16,31 @@ import sys
 
 import duckdb
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 COLUMNS = {
-    "geonameid": "INTEGER", "name": "VARCHAR", "asciiname": "VARCHAR",
-    "alternatenames": "VARCHAR", "latitude": "DOUBLE", "longitude": "DOUBLE",
-    "feature_class": "VARCHAR", "feature_code": "VARCHAR", "country_code": "VARCHAR",
-    "cc2": "VARCHAR", "admin1_code": "VARCHAR", "admin2_code": "VARCHAR",
-    "admin3_code": "VARCHAR", "admin4_code": "VARCHAR", "population": "BIGINT",
-    "elevation": "INTEGER", "dem": "INTEGER", "timezone": "VARCHAR",
+    "geonameid": "INTEGER",
+    "name": "VARCHAR",
+    "asciiname": "VARCHAR",
+    "alternatenames": "VARCHAR",
+    "latitude": "DOUBLE",
+    "longitude": "DOUBLE",
+    "feature_class": "VARCHAR",
+    "feature_code": "VARCHAR",
+    "country_code": "VARCHAR",
+    "cc2": "VARCHAR",
+    "admin1_code": "VARCHAR",
+    "admin2_code": "VARCHAR",
+    "admin3_code": "VARCHAR",
+    "admin4_code": "VARCHAR",
+    "population": "BIGINT",
+    "elevation": "INTEGER",
+    "dem": "INTEGER",
+    "timezone": "VARCHAR",
     "modification_date": "DATE",
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 def main(source: str, target: str) -> None:
@@ -51,6 +67,8 @@ def main(source: str, target: str) -> None:
     count = con.execute(f"SELECT count(*) FROM '{target}'").fetchone()[0]
     print(f"wrote {count} places to {target}")
 
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

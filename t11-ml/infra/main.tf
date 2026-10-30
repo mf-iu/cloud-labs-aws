@@ -1,14 +1,20 @@
 # Lab t11: bucket for MLflow artifacts and models, PlaceFinder with the
 # /estimate endpoint on ECS Express Mode. The task role may read the model.
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 locals {
   name = "${var.prefix}-${var.owner}-t11"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_s3_bucket" "ml" {
   bucket        = "${local.name}-${var.suffix}-ml"
   force_destroy = true
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_s3_bucket_public_access_block" "ml" {
   bucket                  = aws_s3_bucket.ml.id
@@ -17,6 +23,8 @@ resource "aws_s3_bucket_public_access_block" "ml" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 data "aws_iam_policy_document" "ecs_tasks" {
   statement {
@@ -28,6 +36,8 @@ data "aws_iam_policy_document" "ecs_tasks" {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 data "aws_iam_policy_document" "ecs" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -38,31 +48,43 @@ data "aws_iam_policy_document" "ecs" {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "aws_iam_role" "execution" {
   name               = "${local.name}-ecs-execution"
   assume_role_policy = data.aws_iam_policy_document.ecs_tasks.json
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_iam_role_policy_attachment" "execution" {
   role       = aws_iam_role.execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "aws_iam_role" "infrastructure" {
   name               = "${local.name}-ecs-infrastructure"
   assume_role_policy = data.aws_iam_policy_document.ecs.json
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_iam_role_policy_attachment" "infrastructure" {
   role       = aws_iam_role.infrastructure.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRoleforExpressGatewayServices"
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # Task role: the application itself may only read the models
 resource "aws_iam_role" "task" {
   name               = "${local.name}-task"
   assume_role_policy = data.aws_iam_policy_document.ecs_tasks.json
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_iam_role_policy" "task" {
   name = "read-models"
@@ -76,6 +98,8 @@ resource "aws_iam_role_policy" "task" {
     }]
   })
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_ecs_express_gateway_service" "estimate" {
   service_name            = "${local.name}-estimate"

@@ -1,16 +1,29 @@
 #!/usr/bin/env bash
+
 # Delete the state bucket with all versions. Only do this after every
 # OpenTofu configuration has been destroyed (tofu destroy)!
+#
 # Usage: ./destroy-state.sh
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 check_login
 bucket="$(name "$(suffix)-tfstate")"
+# { ...; } groups both commands: they run if there is no bucket
 aws s3api head-bucket --bucket "$bucket" 2>/dev/null || { log "No state bucket."; exit 0; }
 aws s3 ls --recursive "s3://$bucket"
 confirm "Delete state bucket s3://$bucket with all state versions?" || exit 0
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # A versioned bucket can only be deleted after all versions are gone
+# python3 - reads the program from stdin, here the heredoc up to PY; <<'PY' in
+# quotes: nothing in it is replaced. delete-objects accepts at most 1000 objects
+# per call.
 python3 - "$bucket" <<'PY'
 import json, subprocess, sys
 bucket = sys.argv[1]

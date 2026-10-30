@@ -5,6 +5,8 @@ data "terraform_remote_state" "base" {
   config  = merge(var.backend, { key = "06-infrastructure-as-code/base/terraform.tfstate" })
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 locals {
   name = "${var.prefix}-${var.owner}"
   base = data.terraform_remote_state.base.outputs

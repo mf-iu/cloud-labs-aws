@@ -3,11 +3,15 @@
 # session 6, it cannot be loaded from your computer; PlaceFinder loads the
 # places itself at startup (DATABASE_INIT, service.tf).
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "aws_db_subnet_group" "db" {
   count      = var.enable_database ? 1 : 0
   name       = "${local.name}-t08-db"
   subnet_ids = local.base.subnet_ids["db"]
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_security_group" "db" {
   count       = var.enable_database ? 1 : 0
@@ -23,6 +27,8 @@ resource "aws_security_group" "db" {
     cidr_blocks = local.base.public_subnet_cidrs
   }
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_db_instance" "db" {
   count                  = var.enable_database ? 1 : 0
@@ -47,6 +53,8 @@ resource "aws_db_instance" "db" {
   deletion_protection     = false
   apply_immediately       = true
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # The execution role may read exactly this secret
 resource "aws_iam_role_policy" "read_db_secret" {

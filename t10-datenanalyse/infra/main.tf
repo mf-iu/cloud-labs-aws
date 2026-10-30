@@ -1,5 +1,7 @@
 # Data lake for lab t10: GeoParquet in S3, queried with DuckDB and Athena
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 locals {
   name = "${var.prefix}-${var.owner}-t10"
   columns = {
@@ -18,10 +20,14 @@ locals {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "aws_s3_bucket" "lake" {
   bucket        = "${local.name}-${var.suffix}-lake"
   force_destroy = true
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_s3_bucket_public_access_block" "lake" {
   bucket                  = aws_s3_bucket.lake.id
@@ -30,6 +36,8 @@ resource "aws_s3_bucket_public_access_block" "lake" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Athena writes query results here; they expire after seven days
 resource "aws_s3_bucket_lifecycle_configuration" "lake" {
@@ -47,6 +55,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "lake" {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # Workgroup with a cost limit: a query may scan at most 1 GB
 resource "aws_athena_workgroup" "lab" {
   name          = local.name
@@ -62,9 +72,13 @@ resource "aws_athena_workgroup" "lab" {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "aws_glue_catalog_database" "lab" {
   name = replace(local.name, "-", "_")
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Table definition only (schema on read): the data stays in S3
 resource "aws_glue_catalog_table" "places" {

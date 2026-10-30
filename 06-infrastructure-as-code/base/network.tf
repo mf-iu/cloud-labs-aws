@@ -19,9 +19,13 @@ locals {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 data "aws_availability_zones" "available" {
   state = "available"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_vpc" "main" {
   cidr_block           = "10.20.0.0/16"
@@ -30,10 +34,14 @@ resource "aws_vpc" "main" {
   tags                 = { Name = "${local.name}-vpc" }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
   tags   = { Name = "${local.name}-igw" }
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_subnet" "this" {
   for_each = local.subnets
@@ -43,6 +51,8 @@ resource "aws_subnet" "this" {
   availability_zone = data.aws_availability_zones.available.names[each.value.zone]
   tags              = { Name = "${local.name}-${each.key}", tier = each.value.tier }
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
@@ -54,6 +64,8 @@ resource "aws_route_table" "public" {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # Application and database subnets only have the implicit route within the
 # VPC: nothing in them is reachable from the internet, and without a NAT
 # gateway (about 1 USD per day) nothing in them reaches the internet either
@@ -61,6 +73,8 @@ resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
   tags   = { Name = "${local.name}-rt-private" }
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_route_table_association" "this" {
   for_each = aws_subnet.this

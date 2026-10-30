@@ -1,36 +1,57 @@
 #!/usr/bin/env bash
+
 # Show the automated backups of the RDS instance: retention, backup window,
 # snapshots and the time span of a point-in-time restore. Changes nothing.
+#
 # Usage: ./backups.sh
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 LAB=t06
 check_login
 load_state "$LAB"
 [[ -n "${DB_ID:-}" ]] || die "No database. Run ./create-db.sh first."
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # minutes between an ISO 8601 time and now
-minutes_ago() {   # minutes_ago <time>
-  python3 -c 'import datetime as d, sys
+# minutes_ago <time>
+minutes_ago() {
+    # The program spans two lines inside the single quotes: now minus the given
+    # time, in minutes
+    python3 -c 'import datetime as d, sys
 print(round((d.datetime.now(d.timezone.utc) - d.datetime.fromisoformat(sys.argv[1])).total_seconds() / 60))' "$1"
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 log "Backup settings of $DB_ID:"
+# The query builds an object with three named fields from the answer (JMESPath);
+# --output table prints them as a table
 aws rds describe-db-instances --db-instance-identifier "$DB_ID" \
-  --query 'DBInstances[0].{RetentionDays: BackupRetentionPeriod, BackupWindowUTC: PreferredBackupWindow, LatestRestorableTime: LatestRestorableTime}' \
-  --output table
+    --query 'DBInstances[0].{RetentionDays: BackupRetentionPeriod, BackupWindowUTC: PreferredBackupWindow, LatestRestorableTime: LatestRestorableTime}' \
+    --output table
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 log "Automated snapshots (the first right after creation, then one a day):"
 aws rds describe-db-snapshots --db-instance-identifier "$DB_ID" --snapshot-type automated \
-  --query 'DBSnapshots[].[DBSnapshotIdentifier, SnapshotCreateTime, Status]' --output table
+    --query 'DBSnapshots[].[DBSnapshotIdentifier, SnapshotCreateTime, Status]' --output table
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # snapshots plus the WAL archive (every five minutes) give the restore window
 window=$(aws rds describe-db-instance-automated-backups --db-instance-identifier "$DB_ID" \
-  --query 'DBInstanceAutomatedBackups[0].RestoreWindow.[EarliestTime, LatestTime]' --output text)
+    --query 'DBInstanceAutomatedBackups[0].RestoreWindow.[EarliestTime, LatestTime]' --output text)
+# <<< passes the text as input; read splits it at whitespace into two variables
 read -r earliest latest <<<"$window"
 if [[ -z "$latest" || "$latest" == "None" ]]; then
-  warn "No restore window yet: the first backup runs after creation. Try again in a few minutes."
-  exit 0
+    warn "No restore window yet: the first backup runs after creation. Try again in a few minutes."
+    exit 0
 fi
 cat <<INFO
 

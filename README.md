@@ -76,4 +76,4 @@ tools/tofu.sh 06-infrastructure-as-code/service destroy  # at the end of the ses
 
 ## Konventionen
 
-Anleitungen auf Deutsch, Skripte, Kommentare und Commit-Messages auf Englisch. Die Shell-Skripte sind mit ShellCheck geprüft (`shellcheck */*.sh`; `cloud-labs-local` muss daneben liegen), die OpenTofu-Dateien mit `tofu fmt`.
+Anleitungen auf Deutsch, Skripte, Kommentare und Commit-Messages auf Englisch. Die Shell-Skripte sind mit ShellCheck geprüft (`shellcheck */*.sh`; `cloud-labs-local` muss daneben liegen), die OpenTofu-Dateien mit `tofu fmt`, die Python-Dateien mit Ruff (`ruff check`, `ruff format`).

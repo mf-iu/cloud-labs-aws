@@ -1,37 +1,60 @@
 #!/usr/bin/env bash
+
 # Put an Amazon API Gateway HTTP API in front of the PlaceFinder service.
 # All paths are passed through; the stage limits the request rate so that
 # you can watch "429 Too Many Requests".
+#
 # Usage: ./create-api-gateway.sh
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 LAB=t05
 RATE=10     # requests per second for all clients together
 BURST=20    # short peaks up to this number of requests
 check_login
+# SERVICE_URL comes from the state that deploy.sh saved
 load_state t03
 [[ -n "${SERVICE_URL:-}" ]] || die "No service from t03. Run ./update-service.sh first."
 load_state "$LAB"
 [[ -z "${API_ID:-}" ]] || die "API $API_ID exists already. Delete it with ./destroy-api-gateway.sh."
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 log "Creating HTTP API $(name api) ..."
+# --query ApiId --output text: print only the id of the new API
 api_id=$(aws apigatewayv2 create-api --name "$(name api)" --protocol-type HTTP \
-  --tags "course=$COURSE_TAG,lab=$LAB" --query ApiId --output text)
+    --tags "course=$COURSE_TAG,lab=$LAB" --query ApiId --output text)
 save_state "$LAB" API_ID "$api_id"
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # HTTP proxy integration: /{proxy+} is forwarded to the same path at the backend
+# HTTP_PROXY passes every request unchanged to the service; {proxy} is the path
+# of the request. ${SERVICE_URL%/} removes a slash at the end.
 integration=$(aws apigatewayv2 create-integration --api-id "$api_id" \
-  --integration-type HTTP_PROXY --integration-method ANY \
-  --integration-uri "${SERVICE_URL%/}/{proxy}" \
-  --payload-format-version 1.0 --query IntegrationId --output text)
+    --integration-type HTTP_PROXY --integration-method ANY \
+    --integration-uri "${SERVICE_URL%/}/{proxy}" \
+    --payload-format-version 1.0 --query IntegrationId --output text)
+# One route for every method and path: {proxy+} matches the whole path. The
+# single quotes keep the shell from touching the braces.
 aws apigatewayv2 create-route --api-id "$api_id" --route-key 'ANY /{proxy+}' \
-  --target "integrations/$integration" >/dev/null
+    --target "integrations/$integration" >/dev/null
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Rate limit for every route of the stage (token bucket: RATE per second,
 # bursts up to BURST)
+# The stage $default (in single quotes: not a shell variable) publishes the API
+# at its address without a path prefix; --auto-deploy applies changes right away
 # shellcheck disable=SC2016  # $default is the literal stage name
 aws apigatewayv2 create-stage --api-id "$api_id" --stage-name '$default' --auto-deploy \
-  --default-route-settings "ThrottlingRateLimit=$RATE,ThrottlingBurstLimit=$BURST" >/dev/null
+    --default-route-settings "ThrottlingRateLimit=$RATE,ThrottlingBurstLimit=$BURST" >/dev/null
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 endpoint=$(aws apigatewayv2 get-api --api-id "$api_id" --query ApiEndpoint --output text)
 save_state "$LAB" API_URL "$endpoint"

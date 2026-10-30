@@ -5,6 +5,8 @@
 # The CI pipeline of PlaceFinder pushes the images there; the deploy
 # workflow (deploy.example.yml) rolls out new versions.
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 locals {
   # with a database: connection string without password, the password comes
   # from the secret as PGPASSWORD (libpq reads it); DATABASE_INIT loads the
@@ -14,6 +16,8 @@ locals {
     DATABASE_INIT = "true"
   } : {}
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "aws_ecs_express_gateway_service" "placefinder" {
   service_name            = "${local.name}-t08-placefinder"
