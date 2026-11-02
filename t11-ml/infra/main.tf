@@ -1,5 +1,6 @@
 # Lab t11: bucket for MLflow artifacts and models, PlaceFinder with the
-# /estimate endpoint on ECS Express Mode. The task role may read the model.
+# /estimate endpoint on Elastic Container Service (ECS) Express Mode. The task
+# role may read the model.
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

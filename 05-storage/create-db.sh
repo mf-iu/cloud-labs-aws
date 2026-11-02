@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-# Create an Amazon RDS for PostgreSQL 18 instance (db.t4g.micro) that only
-# accepts connections from your IP address. Daily backups and point-in-time
-# recovery are always on; the backups are kept for one day. Takes about
-# 10 minutes.
+# Create an Amazon Relational Database Service (RDS) for PostgreSQL 18 instance
+# (db.t4g.micro) that only accepts connections from your IP address. Daily
+# backups and point-in-time recovery are always on; the backups are kept for one
+# day. Takes about 10 minutes.
 #
 # Usage: ./create-db.sh
 

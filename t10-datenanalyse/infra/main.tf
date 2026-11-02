@@ -1,4 +1,5 @@
-# Data lake for lab t10: GeoParquet in S3, queried with DuckDB and Athena
+# Data lake for lab t10: GeoParquet in Simple Storage Service (S3), queried with
+# DuckDB and Athena
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -16,7 +17,7 @@ locals {
     population        = "bigint"
     timezone          = "string"
     modification_date = "date"
-    geom              = "binary" # WKB, see export_geoparquet.py
+    geom              = "binary" # Well-Known Binary (WKB), see export_geoparquet.py
   }
 }
 

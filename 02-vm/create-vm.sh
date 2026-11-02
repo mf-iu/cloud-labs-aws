@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Create an EC2 VM that installs and runs PlaceFinder via cloud-init.
+# Create an Elastic Compute Cloud (EC2) VM that installs and runs PlaceFinder
+# via cloud-init.
 #
 # Usage: ./create-vm.sh [git ref]   (default ref: t01)
 
@@ -61,7 +62,8 @@ render "$(dirname "$0")/cloud-init.yaml" "REPO=$PLACEFINDER_REPO" "REF=$ref" >"$
 
 vm_name=$(name "$LAB-vm")
 log "Starting $instance_type with Ubuntu 24.04 ..."
-# HttpTokens=required: the metadata service answers only with a token (IMDSv2).
+# HttpTokens=required: the metadata service answers only with a token (Instance
+# Metadata Service Version 2, IMDSv2).
 # The disk is deleted together with the instance.
 instance=$(aws ec2 run-instances \
     --image-id "$(ubuntu_ami amd64)" \

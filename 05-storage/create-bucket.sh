@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Create a private S3 bucket with CORS (for map tiles) and lifecycle rules.
+# Create a private Simple Storage Service (S3) bucket with Cross-Origin Resource
+# Sharing (CORS) for map tiles and lifecycle rules.
 #
 # Usage: ./create-bucket.sh
 

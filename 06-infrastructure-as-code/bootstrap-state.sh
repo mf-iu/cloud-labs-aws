@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-# Create the S3 bucket for the OpenTofu state (versioned, private) and
-# write .state/backend.hcl, which tools/tofu.sh uses for all configurations.
+# Create the Simple Storage Service (S3) bucket for the OpenTofu state
+# (versioned, private) and write .state/backend.hcl, which tools/tofu.sh uses
+# for all configurations.
 #
 # Usage: ./bootstrap-state.sh
 

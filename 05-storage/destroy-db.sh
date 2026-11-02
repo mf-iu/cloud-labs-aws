@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Delete the RDS instance without final snapshot, and its security group.
+# Delete the Relational Database Service (RDS) instance without final snapshot,
+# and its security group.
 #
 # Usage: ./destroy-db.sh
 

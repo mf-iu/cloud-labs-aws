@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Push a PlaceFinder image into an Amazon ECR repository.
+# Push a PlaceFinder image into an Amazon Elastic Container Registry (ECR)
+# repository.
 #
 # Usage: ./push-image.sh [source image]   (default: $PLACEFINDER_IMAGE:t03)
 

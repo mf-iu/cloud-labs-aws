@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # Roll out a new PlaceFinder version on the Express Mode service from t03:
-# copy $PLACEFINDER_IMAGE:<tag> into ECR, deploy it by digest, wait for the
-# canary deployment and run the smoke test. Without a service from t03, it
-# creates one with ./deploy.sh.
+# copy $PLACEFINDER_IMAGE:<tag> into Elastic Container Registry (ECR), deploy it
+# by digest, wait for the canary deployment and run the smoke test. Without a
+# service from t03, it creates one with ./deploy.sh.
 #
 # Usage: ./update-service.sh [tag]   (default: t05)
 
@@ -39,7 +39,7 @@ if [[ -z "${SERVICE_ARN:-}" ]]; then
     "$REPO_ROOT/03-container-service/deploy.sh" "$image"
     load_state t03
 else
-    # newest service deployment: ARN and status
+    # newest service deployment: Amazon Resource Name (ARN) and status
     # A function defined inside the else branch; it exists from here on
     latest() {
         aws ecs list-service-deployments --cluster default --service "$SERVICE_ARN" \

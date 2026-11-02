@@ -1,6 +1,6 @@
-# IAM roles for the container service, part of base: roles cost nothing and
-# keep their names, so the GitHub role of github-oidc may pass them on
-# (iam:PassRole on <prefix>-<owner>-t08-ecs-*).
+# Identity and Access Management (IAM) roles for the container service, part of
+# base: roles cost nothing and keep their names, so the GitHub role of
+# github-oidc may pass them on (iam:PassRole on <prefix>-<owner>-t08-ecs-*).
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -28,7 +28,8 @@ data "aws_iam_policy_document" "ecs" {
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# Execution role: ECS uses it to pull the image, write logs and read secrets
+# Execution role: Elastic Container Service (ECS) uses it to pull the image,
+# write logs and read secrets
 resource "aws_iam_role" "execution" {
   name               = "${local.name}-t08-ecs-execution"
   assume_role_policy = data.aws_iam_policy_document.ecs_tasks.json

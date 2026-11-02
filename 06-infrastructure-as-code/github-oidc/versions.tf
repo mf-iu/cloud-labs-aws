@@ -8,7 +8,8 @@ terraform {
     }
   }
 
-  # Remote state in S3, a state of its own next to base and service
+  # Remote state in Simple Storage Service (S3), a state of its own next to base
+  # and service
   backend "s3" {}
 }
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-# Show the automated backups of the RDS instance: retention, backup window,
-# snapshots and the time span of a point-in-time restore. Changes nothing.
+# Show the automated backups of the Relational Database Service (RDS) instance:
+# retention, backup window, snapshots and the time span of a point-in-time
+# restore. Changes nothing.
 #
 # Usage: ./backups.sh
 
@@ -44,7 +45,8 @@ aws rds describe-db-snapshots --db-instance-identifier "$DB_ID" --snapshot-type 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# snapshots plus the WAL archive (every five minutes) give the restore window
+# snapshots plus the Write-Ahead Log (WAL) archive (every five minutes) give the
+# restore window
 window=$(aws rds describe-db-instance-automated-backups --db-instance-identifier "$DB_ID" \
     --query 'DBInstanceAutomatedBackups[0].RestoreWindow.[EarliestTime, LatestTime]' --output text)
 # <<< passes the text as input; read splits it at whitespace into two variables

@@ -8,7 +8,8 @@ terraform {
     }
   }
 
-  # Remote state in S3; bucket, region and key come from tools/tofu.sh
+  # Remote state in Simple Storage Service (S3); bucket, region and key come
+  # from tools/tofu.sh
   # (.state/backend.hcl, written by ../bootstrap-state.sh)
   backend "s3" {}
 }

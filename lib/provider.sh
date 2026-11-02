@@ -118,7 +118,9 @@ account_id() {
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# Tags for "--tags" (S3, ECR, IAM ...) and for "--tag-specifications" (EC2)
+# Tags for "--tags" and for "--tag-specifications". "--tags" is used by Simple
+# Storage Service (S3), Elastic Container Registry (ECR), Identity and Access
+# Management (IAM) ..., "--tag-specifications" by Elastic Compute Cloud (EC2).
 aws_tags() {
     echo "Key=course,Value=$COURSE_TAG Key=lab,Value=$1"
 }
@@ -134,8 +136,8 @@ tag_spec() {
 
 default_vpc() {
     local vpc
-    # Vpcs[0].VpcId: the id of the first VPC in the answer; the text None if
-    # there is none
+    # Vpcs[0].VpcId: the id of the first Virtual Private Cloud (VPC) in the
+    # answer; the text None if there is none
     vpc=$(aws ec2 describe-vpcs --filters Name=is-default,Values=true \
         --query 'Vpcs[0].VpcId' --output text)
     [[ "$vpc" != "None" ]] || die "No default VPC in $AWS_REGION. Create one: aws ec2 create-default-vpc"
@@ -144,11 +146,12 @@ default_vpc() {
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# Current Ubuntu 24.04 LTS image published by Canonical
+# Current Ubuntu 24.04 Long-Term Support (LTS) image published by Canonical
 # ubuntu_ami [amd64|arm64]
 ubuntu_ami() {
     # Canonical publishes the id of the current image as a public parameter of
-    # SSM; ${1:-amd64} is the architecture, amd64 if none is given
+    # Systems Manager (SSM); ${1:-amd64} is the architecture, amd64 if none is
+    # given
     aws ssm get-parameter \
         --name "/aws/service/canonical/ubuntu/server/24.04/stable/current/${1:-amd64}/hvm/ebs-gp3/ami-id" \
         --query Parameter.Value --output text

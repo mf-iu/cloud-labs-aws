@@ -2,7 +2,8 @@
 # requires-python = ">=3.12"
 # dependencies = ["duckdb>=1.4"]
 # ///
-"""Query GeoParquet in S3 with DuckDB: own data and Overture Maps places.
+"""Query GeoParquet in Simple Storage Service (S3) with DuckDB: own data and
+Overture Maps places.
 
 AWS credentials come from the environment (see query-duckdb.sh).
 Usage: uv run query_duckdb.py <bucket> [overture release]

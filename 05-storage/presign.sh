@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 # Create a pre-signed URL (valid for one hour) and test it: without
-# signature, with a range request and with a CORS preflight of the map. For
-# a PMTiles file, also print the address of the map with these tiles.
+# signature, with a range request and with a Cross-Origin Resource Sharing
+# (CORS) preflight of the map. For a PMTiles file, also print the address of the
+# map with these tiles.
 #
 # Usage: ./presign.sh [key]   (default: raw/geonames/cities15000.txt)
 

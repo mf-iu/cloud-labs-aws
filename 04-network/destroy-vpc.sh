@@ -13,7 +13,8 @@ source "$(dirname "$0")/../lib/provider.sh"
 LAB=t04
 check_login
 load_state "$LAB"
-# { ...; } groups both commands: they run if there is no saved VPC
+# { ...; } groups both commands: they run if there is no saved Virtual Private
+# Cloud (VPC)
 [[ -n "${VPC_ID:-}" ]] || { log "Nothing to delete."; exit 0; }
 confirm "Delete VPC $VPC_ID with all subnets, gateways and test VMs?" || exit 0
 

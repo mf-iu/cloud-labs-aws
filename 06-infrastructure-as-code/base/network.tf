@@ -1,6 +1,8 @@
-# The network design of session 4: VPC 10.20.0.0/16 with public, application
-# and database subnets in two availability zones (04-network/create-vpc.sh).
-# Part of base: costs nothing without NAT gateway, stays until the course ends.
+# The network design of session 4: Virtual Private Cloud (VPC) 10.20.0.0/16 with
+# public, application and database subnets in two availability zones
+# (04-network/create-vpc.sh).
+# Part of base: costs nothing without Network Address Translation (NAT) gateway,
+# stays until the course ends.
 locals {
   name = "${var.prefix}-${var.owner}"
 

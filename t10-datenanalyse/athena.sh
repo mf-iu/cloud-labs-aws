@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Run an SQL query with Amazon Athena on the GeoParquet file in S3.
+# Run an SQL query with Amazon Athena on the GeoParquet file in Simple Storage
+# Service (S3).
 #
 # Usage: ./athena.sh ["SQL"]   (default: largest places per country)
 

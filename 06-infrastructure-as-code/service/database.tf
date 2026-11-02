@@ -44,8 +44,9 @@ resource "aws_db_instance" "db" {
   vpc_security_group_ids = [aws_security_group.db[0].id]
   publicly_accessible    = false
 
-  # RDS creates the password and keeps it in Secrets Manager: it never
-  # appears in the configuration or in the OpenTofu state
+  # Relational Database Service (RDS) creates the password and keeps it in
+  # Secrets Manager: it never appears in the configuration or in the OpenTofu
+  # state
   manage_master_user_password = true
 
   backup_retention_period = 1

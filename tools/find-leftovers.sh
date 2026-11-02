@@ -25,9 +25,9 @@ section "Resources tagged course=$COURSE_TAG in $AWS_REGION"
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# All resources with the tag course: --query prints the ARN and the value of the
-# tag lab of each (JMESPath: [?Key==`lab`] filters the list, |[0] takes the
-# first match); --output table prints a table
+# All resources with the tag course: --query prints the Amazon Resource Name
+# (ARN) and the value of the tag lab of each (JMESPath: [?Key==`lab`] filters
+# the list, |[0] takes the first match); --output table prints a table
 # shellcheck disable=SC2016  # backticks are JMESPath literals
 aws resourcegroupstaggingapi get-resources \
     --tag-filters "Key=course,Values=$COURSE_TAG" \

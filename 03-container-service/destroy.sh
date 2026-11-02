@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Delete the Express Mode service, its log group, the ECR repository and the roles.
+# Delete the Express Mode service, its log group, the Elastic Container Registry
+# (ECR) repository and the roles.
 #
 # Usage: ./destroy.sh
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Run the image from push-image.sh with Amazon ECS Express Mode (Fargate).
+# Run the image from push-image.sh with Amazon Elastic Container Service (ECS)
+# Express Mode (Fargate).
 # Express Mode creates an HTTPS load balancer, scaling and logs by itself.
 #
 # Usage: ./deploy.sh [image]   (default: image pushed by push-image.sh)
@@ -29,8 +30,8 @@ infra_role=$(name ecs-infrastructure)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # ensure_role <name> <service principal> <managed policy>
-# Create an IAM role if it does not exist: $1 name, $2 the AWS service that may
-# use it, $3 the managed policy it gets
+# Create an Identity and Access Management (IAM) role if it does not exist: $1
+# name, $2 the AWS service that may use it, $3 the managed policy it gets
 ensure_role() {
     if ! aws iam get-role --role-name "$1" >/dev/null 2>&1; then
         log "Creating IAM role $1 ..."

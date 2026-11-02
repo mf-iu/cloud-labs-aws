@@ -1,5 +1,6 @@
-# Keyless deployment from GitHub Actions: the workflow exchanges its OIDC
-# token for short-lived AWS credentials of the role below (no access keys).
+# Keyless deployment from GitHub Actions: the workflow exchanges its OpenID
+# Connect (OIDC) token for short-lived AWS credentials of the role below (no
+# access keys).
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

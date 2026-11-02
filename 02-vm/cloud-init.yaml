@@ -35,7 +35,7 @@ runcmd:
   - sudo --user placefinder --set-home sh -c 'curl --location --silent --show-error --fail https://astral.sh/uv/install.sh | sh'
   - sudo --user placefinder --set-home git clone --depth 1 --branch '__REF__' '__REPO__' /opt/placefinder/app
   - sudo --user placefinder --set-home sh -c 'cd /opt/placefinder/app && /opt/placefinder/.local/bin/uv sync --frozen --no-dev'
-  # GeoNames cities15000 (CC BY 4.0)
+  # GeoNames cities15000 (Creative Commons Attribution, CC BY 4.0)
   - sudo --user placefinder --set-home mkdir --parents /opt/placefinder/data
   - sudo --user placefinder --set-home sh -c 'cd /opt/placefinder/data && curl --fail --silent --show-error --location --remote-name https://download.geonames.org/export/dump/cities15000.zip && unzip -o cities15000.zip'
   - systemctl daemon-reload

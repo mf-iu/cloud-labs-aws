@@ -1,6 +1,7 @@
 # Object storage as in session 7 (05-storage/create-bucket.sh): private
-# bucket with CORS for the map and lifecycle rules. Part of base: a few MB
-# cost practically nothing; the function, the data lake and ML use it later.
+# bucket with Cross-Origin Resource Sharing (CORS) for the map and lifecycle
+# rules. Part of base: a few MB cost practically nothing; the function, the data
+# lake and Machine Learning (ML) use it later.
 resource "aws_s3_bucket" "data" {
   bucket        = "${local.name}-${var.suffix}-t08-data"
   force_destroy = true # lab only: "tofu destroy" deletes the objects as well

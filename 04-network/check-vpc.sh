@@ -63,7 +63,8 @@ log "Design 1/2: subnets and their route to the internet (0.0.0.0/0) ..."
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# internet_route <subnet id>: internet gateway, NAT gateway or none
+# internet_route <subnet id>: internet gateway, Network Address Translation
+# (NAT) gateway or none
 internet_route() {
     local target
     # The targets of the route to 0.0.0.0/0 in the table of the subnet: igw-...

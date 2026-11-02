@@ -4,8 +4,8 @@
 # ///
 """Convert GeoNames cities15000.txt into a GeoParquet file.
 
-The file gets a WKB geometry column "geom" (GeoParquet 1.0 metadata)
-and keeps latitude/longitude as plain columns, so that query engines
+The file gets a Well-Known Binary (WKB) geometry column "geom" (GeoParquet 1.0
+metadata) and keeps latitude/longitude as plain columns, so that query engines
 without geometry support (e.g. Athena, BigQuery external tables) can
 work with it as well.
 

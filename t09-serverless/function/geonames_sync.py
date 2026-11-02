@@ -4,7 +4,8 @@ Downloads the change files that GeoNames publishes every day for the
 previous day (modifications-YYYY-MM-DD.txt, deletes-YYYY-MM-DD.txt),
 keeps the places that belong to the cities15000 subset and
 
-1. stores them as TSV files plus a JSON summary in object storage, and
+1. stores them as Tab-Separated Values (TSV) files plus a JSON summary in
+   object storage, and
 2. applies them to the PostgreSQL table "places" if DATABASE_URL is set.
 
 The module is provider independent: the function handlers for AWS,

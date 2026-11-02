@@ -1,9 +1,10 @@
-# PlaceFinder on Amazon ECS Express Mode (Fargate with HTTPS load balancer)
-# as in session 3, now in the public subnets of the VPC of base. With public
-# subnets, Express Mode creates an internet-facing load balancer and gives
-# the tasks public IP addresses, so they can pull the image from ghcr.io.
-# The CI pipeline of PlaceFinder pushes the images there; the deploy
-# workflow (deploy.example.yml) rolls out new versions.
+# PlaceFinder on Amazon Elastic Container Service (ECS) Express Mode (Fargate
+# with HTTPS load balancer) as in session 3, now in the public subnets of the
+# Virtual Private Cloud (VPC) of base. With public subnets, Express Mode creates
+# an internet-facing load balancer and gives the tasks public IP addresses, so
+# they can pull the image from ghcr.io.
+# The Continuous Integration (CI) pipeline of PlaceFinder pushes the images
+# there; the deploy workflow (deploy.example.yml) rolls out new versions.
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -44,7 +45,8 @@ resource "aws_ecs_express_gateway_service" "placefinder" {
       }
     }
 
-    # the key "password" of the secret that RDS manages (database.tf)
+    # the key "password" of the secret that Relational Database Service (RDS)
+    # manages (database.tf)
     dynamic "secret" {
       for_each = var.enable_database ? [1] : []
       content {

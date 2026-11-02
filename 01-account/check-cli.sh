@@ -93,7 +93,7 @@ log "Region: $AWS_REGION, profile: ${AWS_PROFILE:-<none>}"
 
 # Working with the root user is discouraged; warn if that is the case
 arn=$(aws sts get-caller-identity --query Arn --output text)
-# *":root": the ARN ends with :root
+# *":root": the Amazon Resource Name (ARN) ends with :root
 if [[ "$arn" == *":root" ]]; then
     warn "You are logged in as root user. Create an IAM user for daily work (see README)."
 fi
