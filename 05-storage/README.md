@@ -39,6 +39,8 @@ Die Adresse der Karte, die `presign.sh` ausgibt, im Browser öffnen, während Pl
 
 ## Zusatz: verwaltete Datenbank (Termin 6)
 
+Freiwillig und ohne Folgen für spätere Termine; die Übung von Termin 6 ist rein lokal ([cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis)). Pflicht wird die verwaltete Datenbank in Termin 8 – dann im privaten Netz, angelegt mit OpenTofu in `06-infrastructure-as-code/service`. Die Instanz wird stündlich abgerechnet; der Ablauf dauert mit Anlegen und Löschen rund 30 Minuten.
+
 ```bash
 cd /workspaces/cloud-labs-aws/05-storage
 ./create-db.sh               # Security Group (5432 nur von der eigenen IP), RDS-Instanz, ca. 10 min
@@ -46,7 +48,8 @@ cd /workspaces/cloud-labs-aws/05-storage
 ./with-db.sh query.sh        # Zeiten mit der lokalen Datenbank vergleichen
 ./with-db.sh test-api.sh     # PlaceFinder lokal, die Daten aus der Cloud
 ./backups.sh                 # Backups und Point-in-Time Recovery
-./destroy-db.sh              # danach löschen
+./destroy-db.sh              # danach löschen – gehört dazu
+../tools/find-leftovers.sh   # nichts mehr, was kostet?
 ```
 
 `with-db.sh` setzt `DATABASE_URL` auf die Datenbank aus `create-db.sh` und ruft das Skript aus [cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis) auf – dieselben Skripte wie lokal, jetzt über das Internet.
