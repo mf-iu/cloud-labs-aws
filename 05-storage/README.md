@@ -1,17 +1,50 @@
 # 05 – Object Storage und verwaltete Datenbank
 
-In Termin 7 kommen die Rohdaten von GeoNames und die Kacheldatei aus [cloud-labs-local/07-cache-and-storage](https://github.com/mf-iu/cloud-labs-local/tree/master/07-cache-and-storage) in den privaten Object Storage von AWS; die Karte von PlaceFinder liest ihre Kacheln von dort, mit zeitlich begrenztem Zugriff, Range Requests und CORS. Die verwaltete PostgreSQL-Datenbank aus Termin 6 ist **Zusatz** – freiwillig und ohne Folgen für spätere Termine; PostGIS lokal steht in [cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis).
+In Termin 6 legt dieser Schritt eine verwaltete PostgreSQL-Datenbank mit PostGIS bei AWS an – das ist die **Übung im Termin**. Die Skripte aus [cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis) laden die Orte von GeoNames hinein und prüfen PlaceFinder damit; `with-db.sh` ruft sie mit dieser Datenbank auf. In Termin 7 kommen die Rohdaten von GeoNames und die Kacheldatei aus [cloud-labs-local/07-cache-and-storage](https://github.com/mf-iu/cloud-labs-local/tree/master/07-cache-and-storage) in den privaten Object Storage von AWS; die Karte von PlaceFinder liest ihre Kacheln von dort, mit zeitlich begrenztem Zugriff, Range Requests und CORS.
 
 | Skript | Aufgabe |
 |---|---|
-| `create-bucket.sh`, `destroy-bucket.sh` | ein privater S3-Bucket beim Anbieter, mit CORS und Lebenszyklusregel; Rohdaten hochladen; alles wieder löschen |
-| `upload.sh` | Datei hochladen: `.pmtiles` nach `tiles/`, alles andere nach `raw/` |
-| `presign.sh` | Pre-Signed URL für eine Stunde, getestet ohne Signatur, mit Range Request und CORS; für PMTiles die Adresse der Karte |
 | `create-db.sh`, `destroy-db.sh` | PostgreSQL 18 beim Anbieter anlegen, nur von der eigenen IP-Adresse erreichbar, und wieder löschen |
 | `backups.sh` | automatische Backups und das Zeitfenster für Point-in-Time Recovery anzeigen; ändert nichts |
 | `with-db.sh` | ein Skript aus `cloud-labs-local/06-postgis` mit dieser Datenbank ausführen, z. B. `./with-db.sh load-cities.sh` |
+| `create-bucket.sh`, `destroy-bucket.sh` | ein privater S3-Bucket beim Anbieter, mit CORS und Lebenszyklusregel; Rohdaten hochladen; alles wieder löschen |
+| `upload.sh` | Datei hochladen: `.pmtiles` nach `tiles/`, alles andere nach `raw/` |
+| `presign.sh` | Pre-Signed URL für eine Stunde, getestet ohne Signatur, mit Range Request und CORS; für PMTiles die Adresse der Karte |
 
 **Kosten:** Object Storage: Speicher in Frankfurt ca. 0,025 USD je GB und Monat, dazu Anfragen und ausgehender Verkehr – bei einigen MB praktisch null, aus dem Guthaben. Datenbank: `db.t4g.micro` mit 20 GB gp3 ca. 0,02 USD pro Stunde plus öffentliche IPv4-Adresse, aus dem Guthaben. **Nicht über Nacht laufen lassen.**
+
+## Im Termin: verwaltete Datenbank (Termin 6)
+
+Übung im Termin, rund 60 Minuten zusammen mit dem lokalen Vergleich aus [cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis). `create-db.sh` kurz vor der Pause starten – das Anlegen dauert etwa 10 Minuten und läuft währenddessen. Die Instanz wird stündlich abgerechnet: am Ende löschen, das gehört zur Übung. Der Foliensatz `T06_Lab-Skripte` erklärt die Skripte.
+
+```bash
+cd /workspaces/cloud-labs-aws/05-storage
+./create-db.sh               # Security Group (5432 nur von der eigenen IP), RDS-Instanz, ca. 10 min
+./with-db.sh load-cities.sh  # dieselben Daten, jetzt über das Internet
+./with-db.sh query.sh        # Zeiten mit der lokalen Datenbank vergleichen
+./with-db.sh query.sh --interactive   # SHOW max_connections;
+./with-db.sh test-api.sh     # PlaceFinder lokal, die Daten aus der Cloud
+./backups.sh                 # Backups und Point-in-Time Recovery
+./destroy-db.sh              # danach löschen – gehört dazu
+../tools/find-leftovers.sh   # nichts mehr, was kostet?
+```
+
+`with-db.sh` setzt `DATABASE_URL` auf die Datenbank aus `create-db.sh` und ruft das Skript aus [cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis) auf – dieselben Skripte wie lokal, jetzt über das Internet.
+
+`create-db.sh` erzeugt ein zufälliges Passwort für den Benutzer `pfadmin` und speichert die Verbindungszeichenkette in `../.state/t06.env` (nicht eingecheckt). Die Instanz ist öffentlich erreichbar, die Security Group lässt aber nur die eigene IP-Adresse zu, und die Verbindung ist mit TLS verschlüsselt (`sslmode=require`). Das Skript fragt die aktuelle Unterversion von PostgreSQL 18 ab und legt die Instanz damit an – dieselbe Hauptversion wie lokal.
+
+PlaceFinder von Hand mit derselben Datenbank starten (im Ordner `/workspaces/placefinder`), etwa für die Karte (`http://localhost:5173/?api=http://localhost:8000`):
+
+```bash
+source ../cloud-labs-aws/.state/t06.env && export DATABASE_URL   # the database from create-db.sh
+uv run fastapi dev src/placefinder/main.py                # meldet: Using PostGIS at <host>:5432/placefinder
+```
+
+**Zeiten vergleichen:** Lokal brauchen die Anfragen wenige Millisekunden. Mit der Datenbank beim Anbieter kommt für jede Abfrage mindestens ein Weg durchs Internet hinzu – die Zeiten von `./with-db.sh test-api.sh` zeigen, warum Anwendung und Datenbank in dieselbe Region und dasselbe Netz gehören (Termin 8).
+
+**Backups:** RDS sichert täglich einen Snapshot und archiviert das WAL alle fünf Minuten. `create-db.sh` setzt die Aufbewahrung auf einen Tag (`--backup-retention-period 1`). `backups.sh` zeigt Einstellungen, Snapshots und das Zeitfenster für Point-in-Time Recovery. Eine Wiederherstellung legt eine **neue Instanz** an (`aws rds restore-db-instance-to-point-in-time`); das Skript zeigt den Befehl nur.
+
+In der RDS-Konsole: *Monitoring* (CPU, Verbindungen), *Maintenance & backups* (automatische Backups, Point-in-Time-Recovery).
 
 ## Object Storage mit Kacheln (Termin 7)
 
@@ -36,38 +69,6 @@ Die Adresse der Karte, die `presign.sh` ausgibt, im Browser öffnen, während Pl
 - `presign.sh` signiert mit den Zugangsdaten der AWS CLI (Signature Version 4). Die URL gilt höchstens so lange wie diese Zugangsdaten – bei kurzlebigen Anmeldungen (SSO) auch kürzer als die angegebene Stunde.
 
 **Prüfen:** Die Ausgabe von `presign.sh` zeigt ohne Signatur `403` – das Objekt ist privat –, mit Signatur und `Range: bytes=0-99` die Antwort `206 Partial Content` mit `Content-Range` und bei der Preflight-Anfrage `Access-Control-Allow-Origin: http://localhost:5173`.
-
-## Zusatz: verwaltete Datenbank (Termin 6)
-
-Freiwillig und ohne Folgen für spätere Termine; die Übung von Termin 6 ist rein lokal ([cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis)). Pflicht wird die verwaltete Datenbank in Termin 8 – dann im privaten Netz, angelegt mit OpenTofu in `06-infrastructure-as-code/service`. Die Instanz wird stündlich abgerechnet; der Ablauf dauert mit Anlegen und Löschen rund 30 Minuten.
-
-```bash
-cd /workspaces/cloud-labs-aws/05-storage
-./create-db.sh               # Security Group (5432 nur von der eigenen IP), RDS-Instanz, ca. 10 min
-./with-db.sh load-cities.sh  # dieselben Daten, jetzt über das Internet
-./with-db.sh query.sh        # Zeiten mit der lokalen Datenbank vergleichen
-./with-db.sh test-api.sh     # PlaceFinder lokal, die Daten aus der Cloud
-./backups.sh                 # Backups und Point-in-Time Recovery
-./destroy-db.sh              # danach löschen – gehört dazu
-../tools/find-leftovers.sh   # nichts mehr, was kostet?
-```
-
-`with-db.sh` setzt `DATABASE_URL` auf die Datenbank aus `create-db.sh` und ruft das Skript aus [cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis) auf – dieselben Skripte wie lokal, jetzt über das Internet.
-
-`create-db.sh` erzeugt ein zufälliges Passwort für den Benutzer `pfadmin` und speichert die Verbindungszeichenkette in `../.state/t06.env` (nicht eingecheckt). Die Instanz ist öffentlich erreichbar, die Security Group lässt aber nur die eigene IP-Adresse zu, und die Verbindung ist mit TLS verschlüsselt (`sslmode=require`). Das Skript fragt die aktuelle Unterversion von PostgreSQL 18 ab und legt die Instanz damit an – dieselbe Hauptversion wie lokal.
-
-PlaceFinder von Hand mit derselben Datenbank starten (im Ordner `/workspaces/placefinder`), etwa für die Karte (`http://localhost:5173/?api=http://localhost:8000`):
-
-```bash
-source ../cloud-labs-aws/.state/t06.env && export DATABASE_URL   # the database from create-db.sh
-uv run fastapi dev src/placefinder/main.py                # meldet: Using PostGIS at <host>:5432/placefinder
-```
-
-**Zeiten vergleichen:** Lokal brauchen die Anfragen wenige Millisekunden. Mit der Datenbank beim Anbieter kommt für jede Abfrage mindestens ein Weg durchs Internet hinzu – die Zeiten von `./with-db.sh test-api.sh` zeigen, warum Anwendung und Datenbank in dieselbe Region und dasselbe Netz gehören (Termin 8).
-
-**Backups:** RDS sichert täglich einen Snapshot und archiviert das WAL alle fünf Minuten. `create-db.sh` setzt die Aufbewahrung auf einen Tag (`--backup-retention-period 1`). `backups.sh` zeigt Einstellungen, Snapshots und das Zeitfenster für Point-in-Time Recovery. Eine Wiederherstellung legt eine **neue Instanz** an (`aws rds restore-db-instance-to-point-in-time`); das Skript zeigt den Befehl nur.
-
-In der RDS-Konsole: *Monitoring* (CPU, Verbindungen), *Maintenance & backups* (automatische Backups, Point-in-Time-Recovery).
 
 ## Typische Probleme
 
