@@ -129,14 +129,13 @@ Ab Termin 8 arbeitet jeder Teilnehmer mit dem nächsten Anbieter (Termin 0, Foli
 
 1. Alles löschen, was noch läuft: die `destroy-…`-Skripte von `02-vm` bis `05-storage`.
 2. `tools/find-leftovers.sh` – zeigt nichts mehr an, was Geld kostet.
-3. Budget-Alarm und Zugangsdaten bleiben; die Folien der Zwischenpräsentation gehen an den Nachfolger.
+3. Budget-Alarm und Zugangsdaten bleiben.
 
 **Beim neuen Anbieter:**
 
 1. Das Übungs-Repository des neuen Anbieters klonen, neben `cloud-labs-local` und `placefinder` (im Ubuntu-Fenster: `git clone https://github.com/mf-iu/cloud-labs-azure.git`), in VS Code öffnen und „Reopen in Container“ wählen. Der Container baut dasselbe Dockerfile aus `cloud-labs-local` und ergänzt die CLI des neuen Anbieters; Images und Cluster aus dem alten Container sind dort nicht vorhanden.
 2. `config.example.env` nach `config.env` kopieren und ausfüllen.
 3. Diesen Schritt beim neuen Anbieter durcharbeiten: Konto bzw. Testphase, Budget-Alarm, Anmeldung der CLI, `01-account/check-cli.sh`.
-4. Die Folien des Vorgängers lesen, besonders die Übergabe-Checkliste.
 
 PlaceFinder bleibt derselbe Fork und `cloud-labs-local` dasselbe Repository; das Image auf ghcr.io kann jeder Anbieter laden.
 

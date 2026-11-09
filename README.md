@@ -2,7 +2,7 @@
 
 Skripte für den praktischen Teil des Kurses „Cloud Computing – Konzepte und Praxis für die Softwareentwicklung“ bei Amazon Web Services (AWS). Die Ordner enthalten nur, was beim Anbieter läuft; alles, was ohne Cloud-Konto geht, steht in [cloud-labs-local](https://github.com/mf-iu/cloud-labs-local). Die Gegenstücke für die anderen Anbieter liegen in `cloud-labs-azure` und `cloud-labs-gcp`; Aufbau und Ordnernamen sind dort gleich.
 
-Jeder Teilnehmer arbeitet in der ersten Kurshälfte (Termine 1–7) mit einem Anbieter und wechselt nach der Zwischenpräsentation zu einem anderen (Termine 8–12). Wer AWS erst ab Termin 8 nutzt, richtet das Konto mit `01-account` ein und arbeitet dann mit `06-infrastructure-as-code` weiter.
+Jeder Teilnehmer arbeitet in der ersten Kurshälfte (Termine 1–7) mit einem Anbieter und wechselt nach Termin 7 zu einem anderen (Termine 8–12). Wer AWS erst ab Termin 8 nutzt, richtet das Konto mit `01-account` ein und arbeitet dann mit `06-infrastructure-as-code` weiter.
 
 ## Voraussetzungen
 

@@ -1,6 +1,6 @@
 # 06 – Infrastruktur als Code: base und service
 
-**Ziel:** Die Infrastruktur der Zwischenpräsentation entsteht beim neuen Anbieter reproduzierbar aus OpenTofu-Code mit Remote State – in zwei Teilen:
+**Ziel:** Die Infrastruktur der Termine 3 bis 7 entsteht beim neuen Anbieter reproduzierbar aus OpenTofu-Code mit Remote State – in zwei Teilen:
 
 - **`base`** – VPC aus Termin 4, S3-Bucket aus Termin 7, IAM-Rollen für ECS Express Mode. Entsteht einmal in Termin 8 und bleibt bis zum Kursende; kostet praktisch nichts.
 - **`service`** – PlaceFinder auf ECS Express Mode, optional RDS for PostgreSQL. Liest die Ausgaben von `base` und wird im Termin angelegt und wieder gelöscht.
