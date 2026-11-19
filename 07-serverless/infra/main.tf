@@ -1,29 +1,5 @@
 # Daily GeoNames update as AWS Lambda function, started by EventBridge
-# Scheduler. Build the package first: ../package.sh
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-locals {
-  name = "${var.prefix}-${var.owner}-t09"
-}
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-# Bucket for the change files
-resource "aws_s3_bucket" "data" {
-  bucket        = "${local.name}-${var.suffix}-data"
-  force_destroy = true
-}
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-resource "aws_s3_bucket_public_access_block" "data" {
-  bucket                  = aws_s3_bucket.data.id
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
+# Scheduler. Build the package first: 07-serverless/package.sh
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -35,7 +11,8 @@ data "archive_file" "package" {
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# Execution role: write logs, write objects into the bucket, nothing else
+# Execution role: write logs, write objects under geonames/ in the bucket of
+# base, nothing else
 data "aws_iam_policy_document" "lambda_trust" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -65,7 +42,7 @@ resource "aws_iam_role_policy_attachment" "logs" {
 data "aws_iam_policy_document" "bucket" {
   statement {
     actions   = ["s3:PutObject"]
-    resources = ["${aws_s3_bucket.data.arn}/geonames/*"]
+    resources = ["arn:aws:s3:::${local.bucket}/geonames/*"]
   }
 }
 
@@ -98,12 +75,34 @@ resource "aws_lambda_function" "sync" {
 
   environment {
     variables = {
-      DATA_BUCKET  = aws_s3_bucket.data.bucket
+      DATA_BUCKET  = local.bucket
       DATABASE_URL = var.database_url
     }
   }
 
   depends_on = [aws_cloudwatch_log_group.function, aws_iam_role_policy_attachment.logs]
+}
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Asynchronous calls (the schedule, invoke.sh --async): Lambda retries a failed
+# run twice, after about one and two more minutes. With the extra task, an
+# event that still fails goes to the dead-letter queue (dead_letter.tf).
+resource "aws_lambda_function_event_invoke_config" "sync" {
+  function_name                = aws_lambda_function.sync.function_name
+  maximum_retry_attempts       = 2
+  maximum_event_age_in_seconds = 3600
+
+  dynamic "destination_config" {
+    for_each = var.dead_letter ? [1] : []
+    content {
+      on_failure {
+        destination = aws_sqs_queue.dead_letter[0].arn
+      }
+    }
+  }
+
+  depends_on = [aws_iam_role_policy.dead_letter]
 }
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -143,6 +142,8 @@ resource "aws_iam_role_policy" "scheduler" {
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+# The scheduler hands the event to Lambda asynchronously. Its own retries only
+# cover the delivery (e.g. throttling); a failing run is retried by Lambda.
 resource "aws_scheduler_schedule" "daily" {
   name                         = "${local.name}-geonames-daily"
   schedule_expression          = var.schedule

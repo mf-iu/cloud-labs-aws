@@ -36,11 +36,11 @@ Die Ordner folgen dem Inhalt; die Spalte *Termin* nennt, wann sie dran sind. Die
 | 4 | [04-network](04-network/README.md) | VPC mit öffentlichen und privaten Subnetzen, Security Groups; Zusatz Test-VMs mit Bastion-Host und NAT-Gateway | AWS CLI |
 | 6 (Zusatz), 7 | [05-storage](05-storage/README.md) | S3-Bucket mit Pre-Signed URLs, Range Requests, CORS und Kartenkacheln; Zusatz RDS for PostgreSQL mit PostGIS | AWS CLI, psql |
 | 8 | [06-infrastructure-as-code](06-infrastructure-as-code/README.md) | `base` (VPC, Bucket, Rollen) und `service` (ECS Express Mode, RDS im privaten Subnetz) als Code, Remote State in S3; Ausrollen aus GitHub Actions ohne Schlüssel (OIDC) | OpenTofu, GitHub Actions |
-| 9 | [t09-serverless](t09-serverless/README.md) | Täglicher GeoNames-Abgleich als Lambda-Function mit EventBridge Scheduler | OpenTofu, Python |
+| 9 | [07-serverless](07-serverless/README.md) | Täglicher GeoNames-Abgleich als Lambda-Function mit EventBridge Scheduler, Ergebnis im Bucket von `base`; Zusatz Dead-Letter-Queue mit Alarm | OpenTofu, Python |
 | 10 | [08-analytics](08-analytics/README.md) | GeoParquet im S3-Bucket von `base`, Abfragen mit DuckDB; Zusatz Athena | DuckDB; OpenTofu |
 | 11 (Zusatz) | [09-machine-learning](09-machine-learning/README.md) | MLflow-Server mit den Modellen im S3-Bucket von `base` | MLflow, uv |
 
-Termin 12 (Abschluss) hat keinen eigenen Ordner; das Abschlussprojekt baut auf `06-infrastructure-as-code/base` auf. Der Ordner `t09` wird noch nach diesem Schema geordnet.
+Termin 12 (Abschluss) hat keinen eigenen Ordner; das Abschlussprojekt baut auf `06-infrastructure-as-code/base` auf.
 
 ## Ablauf jeder Übung
 

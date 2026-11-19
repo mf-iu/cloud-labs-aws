@@ -1,14 +1,16 @@
 """AWS Lambda handler for the daily GeoNames update.
 
-EventBridge Scheduler calls the function once a day. A manual call may
-pass {"date": "YYYY-MM-DD"} to process a specific day.
+EventBridge Scheduler calls the function once a day, asynchronously. A
+manual call may pass {"date": "YYYY-MM-DD"} to process a specific day.
+The work is done by geonames_sync.py of cloud-labs-local, which package.sh
+copies next to this file; the handler only passes a function that stores
+one object in the bucket of base.
 """
 
 import logging
 import os
 
 import boto3
-
 from geonames_sync import parse_day, run
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
