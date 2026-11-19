@@ -1,10 +1,14 @@
-# Data lake for lab t10: GeoParquet in Simple Storage Service (S3), queried with
-# DuckDB and Athena
+# Extra task of session 10: serverless SQL with Amazon Athena on the
+# GeoParquet file in the bucket of base. Athena charges per data read; the
+# workgroup stops every query that would read more than 1 GB.
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+# Columns of places.parquet (cloud-labs-local/10-analytics/export_geoparquet.py)
+# as Hive types; the table is only a description, the data stay in the bucket
+# (schema on read). The geometry column geom is left out: latitude and
+# longitude are in the file as plain numbers for engines like this one.
 locals {
-  name = "${var.prefix}-${var.owner}-t10"
   columns = {
     geonameid         = "int"
     name              = "string"
@@ -17,21 +21,22 @@ locals {
     population        = "bigint"
     timezone          = "string"
     modification_date = "date"
-    geom              = "binary" # Well-Known Binary (WKB), see export_geoparquet.py
   }
 }
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-resource "aws_s3_bucket" "lake" {
-  bucket        = "${local.name}-${var.suffix}-lake"
-  force_destroy = true
+# Athena writes every result as a file into S3. A bucket of its own: it goes
+# with "destroy", and the results expire after a day.
+resource "aws_s3_bucket" "results" {
+  bucket        = "${local.name}-${var.suffix}-athena"
+  force_destroy = true # lab only: "tofu destroy" deletes the objects as well
 }
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-resource "aws_s3_bucket_public_access_block" "lake" {
-  bucket                  = aws_s3_bucket.lake.id
+resource "aws_s3_bucket_public_access_block" "results" {
+  bucket                  = aws_s3_bucket.results.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -40,25 +45,22 @@ resource "aws_s3_bucket_public_access_block" "lake" {
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# Athena writes query results here; they expire after seven days
-resource "aws_s3_bucket_lifecycle_configuration" "lake" {
-  bucket = aws_s3_bucket.lake.id
+resource "aws_s3_bucket_lifecycle_configuration" "results" {
+  bucket = aws_s3_bucket.results.id
 
   rule {
-    id     = "expire-athena-results"
+    id     = "expire-results"
     status = "Enabled"
-    filter {
-      prefix = "athena-results/"
-    }
+    filter {}
     expiration {
-      days = 7
+      days = 1
     }
   }
 }
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# Workgroup with a cost limit: a query may scan at most 1 GB
+# Workgroup with a cost limit: a query may read at most 1 GB
 resource "aws_athena_workgroup" "lab" {
   name          = local.name
   force_destroy = true
@@ -68,7 +70,7 @@ resource "aws_athena_workgroup" "lab" {
     bytes_scanned_cutoff_per_query  = 1073741824
 
     result_configuration {
-      output_location = "s3://${aws_s3_bucket.lake.bucket}/athena-results/"
+      output_location = "s3://${aws_s3_bucket.results.bucket}/"
     }
   }
 }
@@ -81,7 +83,8 @@ resource "aws_glue_catalog_database" "lab" {
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# Table definition only (schema on read): the data stays in S3
+# Table definition in the Glue Data Catalog: where the files are and which
+# columns they have
 resource "aws_glue_catalog_table" "places" {
   name          = "places"
   database_name = aws_glue_catalog_database.lab.name
@@ -93,7 +96,7 @@ resource "aws_glue_catalog_table" "places" {
   }
 
   storage_descriptor {
-    location      = "s3://${aws_s3_bucket.lake.bucket}/places/"
+    location      = "s3://${local.bucket}/places/"
     input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
     output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
 

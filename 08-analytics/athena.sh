@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-# Run an SQL query with Amazon Athena on the GeoParquet file in Simple Storage
-# Service (S3).
+# Extra task: run an SQL query with Amazon Athena on places.parquet in the
+# bucket of base. Needs 08-analytics/infra (workgroup and table).
 #
-# Usage: ./athena.sh ["SQL"]   (default: largest places per country)
+# Usage: 08-analytics/athena.sh ["SQL"]   (default: largest place per country)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -15,14 +15,15 @@ check_login
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-tofu_out() {
-    "$REPO_ROOT/tools/tofu.sh" "$REPO_ROOT/t10-datenanalyse/infra" output -raw "$1"
+infra_output() {
+    "$REPO_ROOT/tools/tofu.sh" "$REPO_ROOT/08-analytics/infra" output -raw "$1" \
+        || die "No output $1. Create the workgroup first: tools/tofu.sh 08-analytics/infra apply"
 }
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-workgroup=$(tofu_out athena_workgroup)
-database=$(tofu_out glue_database)
+workgroup=$(infra_output athena_workgroup)
+database=$(infra_output glue_database)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -67,4 +68,4 @@ for row in rows:
 '
 scanned=$(aws athena get-query-execution --query-execution-id "$id" \
     --query QueryExecution.Statistics.DataScannedInBytes --output text)
-log "Data scanned: $scanned bytes (Athena charges 5 USD per TB, minimum 10 MB per query)"
+log "Data scanned: $scanned bytes (Athena charges 5 USD per TB, at least 10 MB per query)"

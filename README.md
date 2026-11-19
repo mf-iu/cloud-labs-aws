@@ -37,10 +37,10 @@ Die Ordner folgen dem Inhalt; die Spalte *Termin* nennt, wann sie dran sind. Die
 | 6 (Zusatz), 7 | [05-storage](05-storage/README.md) | S3-Bucket mit Pre-Signed URLs, Range Requests, CORS und Kartenkacheln; Zusatz RDS for PostgreSQL mit PostGIS | AWS CLI, psql |
 | 8 | [06-infrastructure-as-code](06-infrastructure-as-code/README.md) | `base` (VPC, Bucket, Rollen) und `service` (ECS Express Mode, RDS im privaten Subnetz) als Code, Remote State in S3; Ausrollen aus GitHub Actions ohne Schlüssel (OIDC) | OpenTofu, GitHub Actions |
 | 9 | [t09-serverless](t09-serverless/README.md) | Täglicher GeoNames-Abgleich als Lambda-Function mit EventBridge Scheduler | OpenTofu, Python |
-| 10 | [t10-datenanalyse](t10-datenanalyse/README.md) | GeoParquet im Data Lake, Abfragen mit DuckDB und Athena, Overture Maps | OpenTofu, DuckDB |
+| 10 | [08-analytics](08-analytics/README.md) | GeoParquet im S3-Bucket von `base`, Abfragen mit DuckDB; Zusatz Athena | DuckDB; OpenTofu |
 | 11 | [t11-ml](t11-ml/README.md) | Modell-Endpunkt `/estimate`, MLflow-Artefakte in S3 | OpenTofu |
 
-Termin 12 (Abschluss) hat keinen eigenen Ordner; das Abschlussprojekt baut auf `06-infrastructure-as-code/base` auf. Die Ordner `t09` bis `t11` werden noch nach diesem Schema geordnet.
+Termin 12 (Abschluss) hat keinen eigenen Ordner; das Abschlussprojekt baut auf `06-infrastructure-as-code/base` auf. Die Ordner `t09` und `t11` werden noch nach diesem Schema geordnet.
 
 ## Ablauf jeder Übung
 

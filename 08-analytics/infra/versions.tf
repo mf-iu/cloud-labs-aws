@@ -4,10 +4,12 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 6.67"
+      version = "~> 6.69"
     }
   }
 
+  # Remote state in Simple Storage Service (S3); bucket, region and key come
+  # from tools/tofu.sh
   backend "s3" {}
 }
 
@@ -16,6 +18,7 @@ terraform {
 provider "aws" {
   region = var.region
 
+  # Every resource gets these tags (find leftovers: tools/find-leftovers.sh)
   default_tags {
     tags = {
       course = "cloud-computing"

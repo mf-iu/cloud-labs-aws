@@ -186,3 +186,14 @@ tofu_provider_vars() {
 backend_key_arg() {
     echo "key=$1/terraform.tfstate"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# One output of 06-infrastructure-as-code/base, which stays until the end of
+# the course; for the scripts of the later sessions
+# base_output <name>
+base_output() {
+    # output -raw prints the value without quotes
+    "$REPO_ROOT/tools/tofu.sh" "$REPO_ROOT/06-infrastructure-as-code/base" output -raw "$1" \
+        || die "No output $1 from base. Create base first: tools/tofu.sh 06-infrastructure-as-code/base apply"
+}

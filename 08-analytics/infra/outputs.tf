@@ -1,9 +1,3 @@
-output "bucket" {
-  value = aws_s3_bucket.lake.bucket
-}
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
 output "athena_workgroup" {
   value = aws_athena_workgroup.lab.name
 }
