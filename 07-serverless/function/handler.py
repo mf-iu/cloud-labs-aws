@@ -30,5 +30,5 @@ def store(key: str, data: bytes) -> None:
 
 
 def lambda_handler(event, context):
-    day = parse_day(event.get("date")) if isinstance(event, dict) else None
-    return run(store, day)
+    date = event.get("date") if isinstance(event, dict) else None
+    return run(store, parse_day(date))

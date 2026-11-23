@@ -37,7 +37,7 @@ tools/find-leftovers.sh                                    #    nur noch base
 
 **Paket:** `package.sh` kopiert den Handler und `geonames_sync.py` aus dem Nachbarordner `cloud-labs-local` nach `07-serverless/build/` und installiert `pg8000` für die Lambda-Runtime (`--platform manylinux2014_x86_64 --python-version 3.12`). OpenTofu packt den Ordner als ZIP (`archive_file`); ändert sich der Code, ändert sich der Hash, und `apply` lädt ein neues Paket hoch.
 
-**Handler:** Alles außerhalb von `lambda_handler` läuft einmal je Umgebung (Init): der S3-Client und der Name des Buckets. `lambda_handler` läuft einmal je Ereignis und ruft `run(store, day)`; ein leeres Ereignis vom Zeitplan heißt „gestern“.
+**Handler:** Alles außerhalb von `lambda_handler` läuft einmal je Umgebung (Init): der S3-Client und der Name des Buckets. `lambda_handler` läuft einmal je Ereignis und ruft `run(store, parse_day(date))`. Der Zeitplan schickt das leere Ereignis `{}` (`input` in `main.tf`), das heißt „gestern“.
 
 **Kaltstart:** Beim ersten Aufruf nach dem Ausrollen steht im Log von `invoke.sh` die Zeile `REPORT … Init Duration: … ms`. Der zweite Aufruf kurz danach ist warm und hat keine Init-Zeile. Bei einem Lauf am Tag ist jeder Start kalt; das stört hier nicht.
 

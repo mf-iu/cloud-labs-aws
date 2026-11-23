@@ -156,6 +156,7 @@ resource "aws_scheduler_schedule" "daily" {
   target {
     arn      = aws_lambda_function.sync.arn
     role_arn = aws_iam_role.scheduler.arn
+    input    = jsonencode({}) # the handler then processes yesterday
 
     retry_policy {
       maximum_retry_attempts = 2
